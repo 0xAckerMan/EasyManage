@@ -1,0 +1,11 @@
+DB Name: easymanage
+DB user: admin
+DB pass: admin
+
+
+
+Site title: EasyManage
+    user: admin
+    pass: admin123
+    email: admin@localhost.com
+
