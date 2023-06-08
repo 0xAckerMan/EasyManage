@@ -1,0 +1,80 @@
+html{
+    box-sizing: border-box;
+}
+
+*, *:before, *:after{
+    box-sizing: inherit;
+    padding: 0;
+    margin: 0;
+}
+
+.nav{
+    display: flex;
+    padding: 0 2%;
+    justify-content: space-between;
+    border-bottom: 1px solid gainsboro;
+    align-items: center;
+}
+
+/* now my code body */
+
+.container{
+    display: flex;
+    flex-direction: row;
+}
+.sidebar {
+    width: 200px;
+    height: 100vh;
+    color: #333;
+    /* position: fixed; */
+    left: 0;
+    padding-top: 2%;
+    overflow: hidden;
+    transition: width 0.3s ease-in-out;
+    border: 1px solid gainsboro;
+    /* background-color: aqua; */
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar li {
+    position: relative;
+}
+
+.sidebar a {
+    display: block;
+    padding: 10px 15px;
+    color: #333;
+    text-decoration: none;
+}
+
+.sidebar .expandable>a::after {
+    content: "+";
+    float: right;
+    transition: transform 0.3s ease-in-out;
+}
+
+.sidebar .expandable.active>a::after {
+    transform: rotate(45deg);
+}
+
+.sidebar .sub-menu {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out;
+}
+
+.sidebar .expandable.active>.sub-menu {
+    max-height: 200px;
+}
+
+/* Add orange background to selected menu item */
+.sidebar .active>a,
+.sidebar .active .sub-menu .active>a {
+    background-color: rgb(235, 106, 96);
+    color: #fff;
+}
