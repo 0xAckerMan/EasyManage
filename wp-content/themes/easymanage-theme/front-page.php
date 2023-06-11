@@ -3,7 +3,7 @@
 
 get_header();
 ?>
-     <div class="overview">
+     <!-- <div class="overview">
                 <p id="overview">Overview</p>
                 <p>Thursday May 23, 2023</p>
             </div>
@@ -38,72 +38,134 @@ get_header();
                         <p>20</p>
                     </div>
                 </div>
+            </div> -->
+
+
+
+    <div class="page-home">
+    <div class="top-cards-con">
+
+        <div class="brief-info-card">
+            <div class="icon">
+                <ion-icon name='people-outline'></ion-icon>
             </div>
 
-
-    <?php
-    // show admin employees not projects
-    if (is_user_in_role(wp_get_current_user(), 'administrator')) {
-
-        $users = [
-            [
-                'fullname' => 'John Smith',
-                'email' => 'john.smith@example.com',
-                'role' => 'Program Manager'
-            ],
-            [
-                'fullname' => 'Jane Doe',
-                'email' => 'jane.doe@example.com',
-                'role' => 'Trainer'
-            ],
-            [
-                'fullname' => 'Michael Johnson',
-                'email' => 'michael.johnson@example.com',
-                'role' => 'Trainee'
-            ]
-        ];
-
-
-    ?>
-        <div class="employees-con">
-            <div class="e-header">
-                <h3>Users</h3>
-                <!-- <a href="<?php echo site_url('/create-employee') ?>"> <button class="custom-btn secondary"><ion-icon name='add'></ion-icon>Add Employee</button></a> -->
-            </div>
-            <div class="e-list">
-                <div class="employee-h">
-                    <div class="e-index">No.</div>
-                    <div class="e-fullname">Fullname</div>
-                    <div class="e-role">Role</div>
-
-                    <div class="e-options">
-                        Options
-                    </div>
-                </div>
-                <?php
-                $i = 0;
-                foreach ($users as $user) {
-                ?>
-                    <div class="employee-d">
-                        <div class="e-index"><?php echo ++$i; ?>.</div>
-                        <div class="e-fullname"><?php echo $user['fullname'] ?></div>
-                        <!-- <div class="e-email"><?php // echo $employee['email'] 
-                                                    ?></div> -->
-                        <div class="e-role"><?php echo $user['role'] ?></div>
-
-                        <div class="e-options">
-                            <ion-icon name='create' class="edit"></ion-icon>
-                            <ion-icon name='trash' class="delete"></ion-icon>
-                        </div>
-                    </div>
-                <?php
-                }
-                ?>
+            <div class="bi-right">
+                <p>Total Users</p>
+                <span>22</span>
             </div>
         </div>
-    <?php
+        <div class="brief-info-card">
+            <div class="icon">
+                <ion-icon name='people-outline'></ion-icon>
+            </div>
 
-    } ?>
+            <div class="bi-right">
+                <p>Program Managers</p>
+                <span>1</span>
+            </div>
+        </div>
+        <div class="brief-info-card">
+            <div class="icon">
+                <ion-icon name='people-outline'></ion-icon>
+            </div>
+
+            <div class="bi-right">
+                <p>Total Trainers</p>
+                <span>2</span>
+            </div>
+        </div>
+    </div>
+    <div class="overview-flex">
+
+    <div class="overview-card">
+            <p class="overview-title">Trainees Overview</p>
+            <p class="overview-total">24</p>
+            <div class="overview-percent-con" style="grid-template-columns: 30% 70%;">
+                <div></div>
+                <div></div>
+            </div>
+
+            <div class="overview-labels">
+
+                <div>
+                    <div class="ol-title">Wordpress</div>
+                    <div class="ol-val">10</div>
+                </div>
+                <div>
+                    <div class="ol-title">Angular</div>
+                    <div class="ol-val">14</div>
+                </div>
+            </div>
+        </div>
+        <div class="overview-card">
+            <p class="overview-title">Trainees Overview</p>
+            <p class="overview-total">24</p>
+            <div class="overview-percent-con" style="grid-template-columns: 30% 70%;">
+                <div></div>
+                <div></div>
+            </div>
+
+            <div class="overview-labels">
+
+                <div>
+                    <div class="ol-title">Wordpress</div>
+                    <div class="ol-val">10</div>
+                </div>
+                <div>
+                    <div class="ol-title">Angular</div>
+                    <div class="ol-val">14</div>
+                </div>
+            </div>
+        </div>
+    </div>
+            <div class="project-summary-con" style="margin-top: 2%;">
+        <div class="section-header">
+            <h3>Projects Summary</h3>
+            <a href="<?php echo site_url('/projects') ?>">View All</a>
+        </div>
+
+        <div class="project-summary-list">
+            <div class="project-summary-h">
+                <span class="ps-name">Project Name</span>
+                <span class="ps-duedate">Due Date</span>
+                <span class="ps-status">Status</span>
+                <span class="ps-assignee">Assignee</span>
+                <span class="ps-detail">Project Detail</span>
+                <span class="ps-progress">Progress</span>
+            </div>
+
+            <?php
+            $projects = array_fill(0, 3, [
+                'title' => 'Plana - Event Management System',
+                'progress' => '75%',
+                'assigned_to' => 'John D',
+                'due_date' => 'Jul 23',
+                'status' => 'Pending',
+                'category' => 'Web App',
+                'tags' => 'WordPress, plugins'
+            ]);
+
+            foreach ($projects as $project) {
+            ?>
+                <div class="project-summary-d">
+                    <span class="ps-name"><?php echo $project['title'] ?></span>
+                    <span class="ps-duedate"><?php echo $project['due_date'] ?></span>
+                    <span class="ps-status"><span><?php echo $project['status'] ?></span></span>
+                    <span class="ps-assignee"><?php echo $project['assigned_to'] ?></span>
+                    <div class="ps-detail">
+                        <span><?php echo $project['category'] ?></span>
+                        <span><?php echo $project['tags'] ?></span>
+                    </div>
+                    <span class="ps-progress">
+                        <div class="progress">
+                            <div class="progress-bar" style="width: <?php echo $project['progress']  ?>"></div>
+                        </div>
+                    </span>
+                </div>
+            <?php } ?>
+        </div>
+    </div>
 
 </div>
 <?php get_footer() ?>
