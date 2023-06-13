@@ -43,7 +43,7 @@ $users = [
             <div class="input-con">
                 <label for="p_assigned_to">Assign Project To </label>
                 <select name="p_assigned_to" id="p_assigned_to">
-                    <option value="" selected disabled hidden>Assign to a employee</option>
+                    <option value="" selected disabled hidden>Assign to a trainee</option>
                     <?php
                     foreach ($users as $user) {
                     ?>

@@ -55,6 +55,8 @@ if (isset($_POST['create-employee-submit'])) {
             <?php echo do_shortcode("[input_tag name='fullname' label='Fullname' placeholder='Enter their fullname']") ?>
             <?php echo do_shortcode("[input_tag name='email' label='Email Address' input_type='email' placeholder='Enter their email address']") ?>
             <?php echo do_shortcode("[input_tag name='password' label='Password' input_type='password' placeholder='Enter their password']") ?>
+            <?php echo do_shortcode("[input_tag name='Stack' label='stack' placeholder='Trains which stack']") ?>
+
 
             <div class="input-con-radio">
                 <label for="">Role</label>

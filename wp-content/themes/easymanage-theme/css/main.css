@@ -13,6 +13,10 @@ html{
     margin: 0;
 }
 
+a{
+	color: rgb(7, 109, 211);
+}
+
 .nav{
     display: flex;
     padding: 0 2%;
@@ -23,7 +27,7 @@ html{
 	width: 100%;
 	background-color: white;
 	z-index: 100;
-	height: 70px;
+	height: 60px;
 	opacity: 1;
 	
 }
@@ -85,7 +89,9 @@ a{
 }
 
 .sidebar .expandable.active>a::after {
-    transform: rotate(45deg);
+    content: "-";
+    float: right;
+    transition: transform 0.3s ease-in-out;
 }
 
 .sidebar .sub-menu {
@@ -98,7 +104,6 @@ a{
     max-height: 200px;
 }
 
-/* Add orange background to selected menu item */
 .sidebar .active>a,
 .sidebar .active .sub-menu .active>a {
     background-color: rgb(235, 106, 96);
@@ -110,16 +115,17 @@ a{
     color: #000;
 }
 
-.logged-user input{
-	border-color: orange;
-	cursor: pointer;
+.logged-user input {
+    border-color: orange;
+    cursor: pointer;
 }
 
-.logged-user input:hover{
-	background-color: orange;
-	background:orange;
-	color: dodgerblue;
+.logged-user input:hover {
+    background-color: orange;
+    background: orange;
+    color: dodgerblue;
 }
+
 
 .overview-flex{
 	display: flex;
@@ -234,9 +240,10 @@ a{
 .inner-form {
 	display: flex;
 	flex-direction: column;
-	width: 30%;
+	width: 28%;
 	gap: 15px;
 	margin-bottom: 2%;
+	margin-top: 5%;
 }
 .inner-form h2 {
 	margin: 40px 0 5px;
@@ -328,7 +335,7 @@ a{
 	padding: 1%;
 	right: 0 !important;
 	/* background-color: #0079bf; */
-	margin-top: 70px;
+	margin-top: 50px;
 	/* margin-right: -100px; */
 }
 
@@ -364,10 +371,54 @@ a{
 }
 
 
+.logout-btn {
+    display: inline-flex;
+    align-items: center;
+    background-color: rgb(255, 181, 44);
+    color: white;
+    padding: 0 10px;
+    height: 40px;
+    text-decoration: none;
+    border-radius: 5px;
+	width: 100%;
+	justify-content: center;
+	font-weight: 600;
+}
+
+.logout-btn:hover {
+	background-color: rgb(255, 123, 0);
+}
+
+.logout-btn ion-icon {
+    margin-left: 20%;
+	margin-right: 5px;
+	/* font-size: 20px; */
+}
 
 
 
 
+
+.search-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+#search-input {
+    height: 30px;
+    width: 200px;
+    margin-right: 10px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+.search-icon {
+    font-size: 20px;
+    color: #333;
+    cursor: pointer;
+}
 
 
 
@@ -552,7 +603,7 @@ input:focus {
 }
 
 .project-summary-list > div .ps-status span {
-	background: rgb(235, 235, 235);
+	background: rgb(230, 255, 229);
 	border-radius: 10px;
 	padding: 3px 6px;
 	font-weight: 500;
