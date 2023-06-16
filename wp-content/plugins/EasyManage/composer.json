@@ -1,0 +1,17 @@
+{
+    "name": "r00t/easymanage-plugin",
+    "description": "My final project at the Jitu. A system to manage a company's employees and projects.",  
+    "type": "project",
+    "license": "GPL",
+    "authors": [
+        {
+            "name": "0xAckerMan",
+            "email": "joelkores1@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {},
+    "autoload": {
+        "psr-4": {"Inc\\": "./inc"}
+    }
+}
