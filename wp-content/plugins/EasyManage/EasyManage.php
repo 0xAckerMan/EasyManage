@@ -23,15 +23,15 @@ if(file_exists(dirname(__FILE__).'/vendor/autoload.php')){
 }
 
 
-function activate_wkseven_plugin(){
+function activate_easymanage_plugin(){
     Inc\Base\Activate::activate();
 }
-register_activation_hook(__FILE__, 'activate_wkseven_plugin');
+register_activation_hook(__FILE__, 'activate_easymanage_plugin');
 
-function deactivate_wkseven_plugin(){
+function deactivate_easymanage_plugin(){
     Inc\Base\Deactivate::deactivate();
 }
-register_deactivation_hook(__FILE__, 'deactivate_wkseven_plugin');
+register_deactivation_hook(__FILE__, 'deactivate_easymanage_plugin');
 
 if (class_exists( 'Inc\\Init')){
     Inc\Init::register_sevices();
