@@ -83,7 +83,7 @@ define( 'WP_DEBUG', true );
 
 /* Add any custom values between this line and the "stop editing" line. */
 
-
+define('JWT_AUTH_SECRET_KEY', 'djkashkjfhkjhjnfhjhfjkvjhccnajhkdfhjk57923487098');
 
 /* That's all, stop editing! Happy publishing. */
 
