@@ -12,10 +12,9 @@ final class Init{
      */
     public static function get_services(){
         return [
-            Pages\Admin::class,
-            Base\Enqueue::class,
-            Pages\CreateEmployee::class,
-            Base\SettingsLinks::class
+            Pages\CreateTables::class,
+            Pages\UsersRoutes::class,
+            Pages\ProjectsRoutes::class,
         ];
     }
     /**
