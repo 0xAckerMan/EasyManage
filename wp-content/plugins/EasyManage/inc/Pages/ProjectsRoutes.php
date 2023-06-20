@@ -60,10 +60,16 @@ class ProjectsRoutes{
         register_rest_route('api/v1', '/projects/trainer/(?P<id>[\d]+)', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_trainer_projects'),
-            'permission_callback' => function() {
-                return current_user_can('read');
+            'permission_callback' => function ($request) {
+                $user = get_user_by('ID', $request['id']);
+                if (!$user || !in_array('trainer', $user->roles)) {
+                    return new WP_Error('rest_forbidden', 'Sorry, you are not allowed to do that.', array('status' => 403));
+                }
+                return true;
             }
         ));
+
+
 
         register_rest_route('api/v1', '/projects/trainee/(?P<id>[\d]+)', array(
             'methods' => 'GET',
@@ -101,15 +107,17 @@ class ProjectsRoutes{
     public function get_projects($request) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'projects';
-        $query = "SELECT * FROM $table_name WHERE p_id = $request[id]";
-        $project = $wpdb->get_results($query);
+        $query = "SELECT * FROM $table_name";
+        $projects = $wpdb->get_results($query);
     
-        if (empty($project)) {
-            return new WP_Error('project_not_found', 'Project not found', ['status' => 404]);
+        if (empty($projects)) {
+            return new WP_Error('projects_not_found', 'No projects found', ['status' => 404]);
         }
     
-        return rest_ensure_response($project);
+        return rest_ensure_response($projects);
     }
+    
+    
     
     
     // Call for the single_project route
@@ -131,17 +139,20 @@ class ProjectsRoutes{
     public function post_project($request) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'projects';
+    
+        // Get the current user ID
+        $current_user_id = get_current_user_id();
+    
         $rows = $wpdb->insert($table_name, array(
             'p_name' => $request['p_name'],
             'p_description' => $request['p_description'],
             'p_category' => $request['p_category'],
             'p_excerpt' => $request['p_excerpt'],
             'p_assigned_to' => $request['p_assigned_to'],
-            'p_assigned_by' => $request['p_assigned_by'],
+            'p_assigned_by' => $current_user_id, // Assign the current user ID as the assigned by
             'p_created_date' => current_time('mysql'),
             'p_due_date' => $request['p_due_date'],
-            'p_cohort' => $request['p_cohort'],
-            
+            'p_cohort_id' => $request['p_cohort_id'], // Updated column name
         ));
     
         if ($rows == 1) {
@@ -151,19 +162,25 @@ class ProjectsRoutes{
         }
     }
     
+    
+    
     // Call for the update_projects route
     public function update_project($request) {
         $id = $request['p_id'];
         global $wpdb;
         $table_name = $wpdb->prefix . 'projects';
-        $rows = $wpdb->update($table_name, array(
-            'p_name' => $request['p_name'],
-            'p_category' => $request['p_category'],
-            'p_excerpt' => $request['p_excerpt'],
-            'p_description' => $request['p_description'],
-            'p_assigned_to' => $request['p_assigned_to'],
-            'p_due_date' => $request['p_due_date'],
-        ), array('p_id' => $id));
+        $rows = $wpdb->update(
+            $table_name,
+            array(
+                'p_name' => $request['p_name'],
+                'p_category' => $request['p_category'],
+                'p_excerpt' => $request['p_excerpt'],
+                'p_description' => $request['p_description'],
+                'p_assigned_to' => $request['p_assigned_to'],
+                'p_due_date' => $request['p_due_date'],
+            ),
+            array('p_id' => $id)
+        );
     
         if ($rows === false) {
             return new WP_Error('project_update_failed', 'Project update failed', ['status' => 500]);
@@ -171,6 +188,7 @@ class ProjectsRoutes{
             return 'Project updated successfully';
         }
     }
+    
     
     // Call for the delete_projects route
     public function delete_project($request) {
@@ -186,24 +204,34 @@ class ProjectsRoutes{
         }
     }
     
-    //project manager projects
+    //trainer projects
     public function get_trainer_projects($request) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'projects';
-        $query = "SELECT * FROM $table_name WHERE p_created_by = $request[id]";
+        $query = $wpdb->prepare("SELECT * FROM $table_name WHERE p_assigned_by = %d", $request['id']);
         $projects = $wpdb->get_results($query);
     
-        return $projects;
+        if (empty($projects)) {
+            return new WP_Error('projects_not_found', 'No projects found', array('status' => 404));
+        }
+    
+        return rest_ensure_response($projects);
     }
     
     public function get_trainee_projects($request) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'projects';
-        $query = "SELECT * FROM $table_name WHERE p_assigned_to = $request[id]";
+        $query = "SELECT * FROM $table_name WHERE p_assigned_to = $request[id] AND p_status = 0";
         $projects = $wpdb->get_results($query);
     
-        return $projects;
+        if (empty($projects)) {
+            $error = new WP_Error('no_projects_found', 'No projects found for the trainee', ['status' => 404]);
+            return $error;
+        }
+    
+        return rest_ensure_response($projects);
     }
+    
     
     public function complete_project($request) {
         $id = $request['id'];
