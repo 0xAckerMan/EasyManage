@@ -15,6 +15,7 @@ final class Init{
             Pages\CreateTables::class,
             Pages\UsersRoutes::class,
             Pages\ProjectsRoutes::class,
+            Pages\SearchUsers::class,
         ];
     }
     /**
