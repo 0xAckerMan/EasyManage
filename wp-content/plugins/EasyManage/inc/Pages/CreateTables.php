@@ -27,9 +27,9 @@ class CreateTables {
             p_status INT DEFAULT 0 NOT NULL,
             p_created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             p_end_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-            p_assigned_to VARCHAR(255) NOT NULL,
-            p_assigned_by VARCHAR(255) NOT NULL,
-            p_cohort VARCHAR(255) NOT NULL
+            p_assigned_to mediumint(9) NOT NULL,
+            p_assigned_by mediumint(9) NOT NULL,
+            p_cohort_id INT NOT NULL
         )";
 
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
@@ -63,7 +63,8 @@ class CreateTables {
             c_name VARCHAR(255) NOT NULL,
             c_created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
             c_end_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-            c_status INT DEFAULT 0 NOT NULL
+            c_status INT DEFAULT 0 NOT NULL,
+            c_trainer VARCHAR(255) NOT NULL
         )";
 
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
