@@ -57,17 +57,25 @@ class ProjectsRoutes{
             }
         ));
 
-        register_rest_route('api/v1', '/projects/project_manager/(?P<id>[\d]+)', array(
+        register_rest_route('api/v1', '/projects/trainer/(?P<id>[\d]+)', array(
             'methods' => 'GET',
-            'callback' => array($this, 'get_project_manager_projects'),
+            'callback' => array($this, 'get_trainer_projects'),
             'permission_callback' => function() {
                 return current_user_can('read');
             }
         ));
 
-        register_rest_route('api/v1', '/projects/assignee/(?P<id>[\d]+)', array(
+        register_rest_route('api/v1', '/projects/trainee/(?P<id>[\d]+)', array(
             'methods' => 'GET',
-            'callback' => array($this, 'get_assignee_projects'),
+            'callback' => array($this, 'get_trainee_projects'),
+            'permission_callback' => function() {
+                return current_user_can('read');
+            }
+        ));
+
+        register_rest_route('api/v1', '/projects/trainee/(?P<id>[\d]+)/completed', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_trainee_completed_projects'),
             'permission_callback' => function() {
                 return current_user_can('read');
             }
@@ -104,7 +112,6 @@ class ProjectsRoutes{
     }
     
     
-
     // Call for the single_project route
     public function get_project($request) {
         global $wpdb;
@@ -119,7 +126,7 @@ class ProjectsRoutes{
         return $project;
     }
     
-
+    
     // Call for the post_projects route
     public function post_project($request) {
         global $wpdb;
@@ -136,14 +143,14 @@ class ProjectsRoutes{
             'p_cohort' => $request['p_cohort'],
             
         ));
-
+    
         if ($rows == 1) {
             return 'Project created successfully';
         } else {
-            return 'Project creation failed';
+            return new WP_Error('project_creation_failed', 'Project creation failed', ['status' => 500]);
         }
     }
-
+    
     // Call for the update_projects route
     public function update_project($request) {
         $id = $request['p_id'];
@@ -157,47 +164,47 @@ class ProjectsRoutes{
             'p_assigned_to' => $request['p_assigned_to'],
             'p_due_date' => $request['p_due_date'],
         ), array('p_id' => $id));
-
+    
         if ($rows === false) {
-            return 'Project update failed';
+            return new WP_Error('project_update_failed', 'Project update failed', ['status' => 500]);
         } else {
             return 'Project updated successfully';
         }
     }
-
+    
     // Call for the delete_projects route
     public function delete_project($request) {
         $id = $request['id'];
         global $wpdb;
         $table_name = $wpdb->prefix . 'projects';
         $rows = $wpdb->delete($table_name, array('p_id' => $id));
-
+    
         if ($rows === false) {
-            return 'Project deletion failed';
+            return new WP_Error('project_deletion_failed', 'Project deletion failed', ['status' => 500]);
         } else {
             return 'Project deleted successfully';
         }
     }
-
+    
     //project manager projects
-    public function get_project_manager_projects($request) {
+    public function get_trainer_projects($request) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'projects';
         $query = "SELECT * FROM $table_name WHERE p_created_by = $request[id]";
         $projects = $wpdb->get_results($query);
-
+    
         return $projects;
     }
-
-    public function get_assignee_projects($request) {
+    
+    public function get_trainee_projects($request) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'projects';
         $query = "SELECT * FROM $table_name WHERE p_assigned_to = $request[id]";
         $projects = $wpdb->get_results($query);
-
+    
         return $projects;
     }
-
+    
     public function complete_project($request) {
         $id = $request['id'];
         global $wpdb;
@@ -212,7 +219,7 @@ class ProjectsRoutes{
         ));
     
         if ($rows === false) {
-            return 'Task completion failed';
+            return new WP_Error('task_completion_failed', 'Task completion failed', ['status' => 500]);
         }
     
         // Update the project as well
@@ -223,10 +230,22 @@ class ProjectsRoutes{
         ));
     
         if ($rows === false) {
-            return 'Project completion failed';
+            return new WP_Error('project_completion_failed', 'Project completion failed', ['status' => 500]);
         } else {
             return 'Project completed successfully';
         }
+    }
+    public function get_trainee_completed_projects($request) {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'projects';
+        $query = "SELECT * FROM $table_name WHERE p_assigned_to = $request[id] AND p_status = 1";
+        $projects = $wpdb->get_results($query);
+    
+        if (empty($projects)) {
+            return new WP_Error('no_completed_projects', 'No completed projects found for the trainee', ['status' => 404]);
+        }
+    
+        return $projects;
     }
     
     public function get_unassigned_users($request) {
@@ -234,7 +253,11 @@ class ProjectsRoutes{
         $table_name = $wpdb->prefix . 'users';
         $query = "SELECT ID, user_nicename, user_email FROM $table_name WHERE ID NOT IN (SELECT p_assigned_to FROM wp_projects)";
         $users = $wpdb->get_results($query);
-
+    
+        if (empty($users)) {
+            return new WP_Error('no_unassigned_users', 'No unassigned users found', ['status' => 404]);
+        }
+    
         $modified_users = array_map(function($user){
             $user->fullname = $user->user_nicename;
             $user->email = $user->user_email;
@@ -247,5 +270,6 @@ class ProjectsRoutes{
         }, $users);
     
         return $modified_users;
-    }
+    }    
+    
 }
