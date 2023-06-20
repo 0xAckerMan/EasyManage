@@ -121,9 +121,18 @@ class UsersRoutes
             'methods' => 'POST',
             'callback' => array($this, 'create_trainee'),
             'permission_callback' => function () {
-                return current_user_can('manage_options');
+                return current_user_can('edit_posts');
             }
         ));
+
+        register_rest_route('api/v1', 'users/trainees/deactivated', array(
+            'methods'             => 'GET',
+            'callback'            => array($this, 'get_deactivated_trainees'),
+            'permission_callback' => function () {
+                return current_user_can('edit_posts');
+            }
+        ));
+        
 
 
 
@@ -159,6 +168,7 @@ class UsersRoutes
                 return current_user_can('manage_options');
             }
         ));
+        
     }
 
     public function get_users()
@@ -375,27 +385,31 @@ class UsersRoutes
 
     public function get_trainers()
     {
-        $trainers = get_users(['role' => 'trainer']);
-
+        $trainers = get_users([
+            'role'         => 'trainer',
+            'meta_key'     => 'is_active',
+            'meta_value'   => true,
+            'meta_compare' => '=',
+        ]);
+    
         if (empty($trainers)) {
-            return new WP_Error('no_trainers_found', 'No trainers found', ['status' => 404]);
+            return new WP_Error('no_active_trainers_found', 'No active trainers found', ['status' => 404]);
         }
-
+    
         $modified_trainers = array_map(function ($trainer) {
-            $user_data = [
-                'ID' => $trainer->ID,
-                'id' => $trainer->ID,
+            return [
+                'ID'       => $trainer->ID,
+                'id'       => $trainer->ID,
                 'fullname' => $trainer->user_nicename,
-                'email' => $trainer->user_email,
-                'roles' => $trainer->roles,
-                'cohort' => (string) get_user_meta($trainer->ID, 'cohort', true)
+                'email'    => $trainer->user_email,
+                'roles'    => $trainer->roles,
+                'cohort'   => (string) get_user_meta($trainer->ID, 'cohort', true),
             ];
-
-            return $user_data;
         }, $trainers);
-
+    
         return $modified_trainers;
     }
+    
 
 
     public function get_trainees()
@@ -426,6 +440,34 @@ class UsersRoutes
 
         return $modified_trainees;
     }
+
+    public function get_deactivated_trainees()
+{
+    $trainees = get_users([
+        'role'         => 'trainee',
+        'meta_key'     => 'is_active',
+        'meta_value'   => false,
+        'meta_compare' => '=',
+    ]);
+
+    if (empty($trainees)) {
+        return new WP_Error('no_deactivated_trainees_found', 'No deactivated trainees found', ['status' => 404]);
+    }
+
+    $modified_trainees = array_map(function ($trainee) {
+        return [
+            'ID'       => $trainee->ID,
+            'id'       => $trainee->ID,
+            'fullname' => $trainee->user_nicename,
+            'email'    => $trainee->user_email,
+            'roles'    => $trainee->roles,
+            'cohort'   => get_user_meta($trainee->ID, 'cohort', true),
+        ];
+    }, $trainees);
+
+    return $modified_trainees;
+}
+
 
 
     public function get_inactive_trainees()
@@ -564,4 +606,5 @@ class UsersRoutes
 
         return $modified_users;
     }
+    
 }
