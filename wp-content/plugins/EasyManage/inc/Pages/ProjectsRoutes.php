@@ -143,6 +143,19 @@ class ProjectsRoutes{
         // Get the current user ID
         $current_user_id = get_current_user_id();
     
+        // Check the number of projects allocated to the current user
+        $projects_count = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM $table_name WHERE p_assigned_to = %d",
+                $current_user_id
+            )
+        );
+    
+        // Check if the user has already reached the maximum allocation of 3 projects
+        if ($projects_count >= 3) {
+            return new WP_Error('max_project_allocation_reached', 'Maximum project allocation reached', ['status' => 400]);
+        }
+    
         $rows = $wpdb->insert($table_name, array(
             'p_name' => $request['p_name'],
             'p_description' => $request['p_description'],
@@ -161,6 +174,7 @@ class ProjectsRoutes{
             return new WP_Error('project_creation_failed', 'Project creation failed', ['status' => 500]);
         }
     }
+    
     
     
     
