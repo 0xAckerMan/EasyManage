@@ -16,6 +16,10 @@ final class Init{
             Pages\UsersRoutes::class,
             Pages\ProjectsRoutes::class,
             Pages\SearchUsers::class,
+            Pages\TrainersRoutes::class,
+            Pages\TraineeRoute::class,
+            Pages\ProgramManager::class,
+            Pages\CohortRoutes::class,
         ];
     }
     /**
