@@ -11,7 +11,9 @@ class CreateTables {
         $this->create_table_projects();
         $this->create_table_tasks();
         $this->create_table_cohorts();
+        $this->create_table_groups();
     }
+    
 
     function create_table_projects() {
         global $wpdb;
@@ -54,21 +56,24 @@ class CreateTables {
         dbDelta($task_details);
     }
 
-    function create_table_cohorts(){
+    function create_table_cohorts() {
         global $wpdb;
-
+    
         $table_name = $wpdb->prefix . 'cohorts';
-
+    
         $cohort_details = "CREATE TABLE IF NOT EXISTS " . $table_name . "(
             c_id INT AUTO_INCREMENT PRIMARY KEY,
             c_name VARCHAR(255) NOT NULL,
             c_created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
             c_end_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
             c_status INT DEFAULT 0 NOT NULL,
-            c_trainer VARCHAR(255) NOT NULL
+            c_trainer BIGINT(20) UNSIGNED NOT NULL,
+            FOREIGN KEY (c_trainer) REFERENCES {$wpdb->prefix}users(ID)
         )";
-
+    
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         dbDelta($cohort_details);
     }
+    
+    
 }
