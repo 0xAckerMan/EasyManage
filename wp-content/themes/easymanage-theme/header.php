@@ -6,6 +6,28 @@ if (!is_user_logged_in() && $slug != 'login') {
     wp_redirect(site_url('/login'));
 }
 ?>
+
+<?php
+// if (is_user_logged_in()) {
+//     if (isset($GLOBALS['token'])) {
+//         // Token already exists, no need to fetch it again
+//         // echo $GLOBALS['token'];
+//     } else {
+//         $user = wp_get_current_user();
+//         $response = get_token('admin', 'admin123');
+
+//         if ($response !== false) {
+//             $token_data = json_decode($response, true);
+//             $GLOBALS['token'] = $token_data['token'];
+//         } else {
+//             // Handle the case when token retrieval fails
+//             // Display an error message or perform any necessary actions
+//         }
+//     }
+// }
+?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 
