@@ -1,6 +1,23 @@
 <?php if (!is_user_logged_in()) wp_redirect(site_url('/login')); ?>
 
 <?php
+// if (is_user_in_role(wp_get_current_user(), 'administrator')) {
+//     $projects = get_all_projects();
+//     $ongoing = array_filter($projects, function ($project) {
+//         return $project->p_done == 0;
+//     });
+//     $completed = array_filter($projects, function ($project) {
+//         return $project->p_done == 1;
+//     });
+// }
+$projects=get_all_projects();
+?>
+
+<?php
+var_dump( $projects );
+?>
+
+<?php
 get_header();
 ?>
 
