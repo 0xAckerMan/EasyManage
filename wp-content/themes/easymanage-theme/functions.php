@@ -1,5 +1,7 @@
 <?php
 
+global $base_api;
+$base_api = 'http://localhost/EasyManage/wp-json/';
 
 function load_css()
 {
@@ -39,6 +41,7 @@ add_role('program-manager', 'Program Manager', array(
     'read' => true,
     'edit_posts' => true,
     'delete_posts' => true,
+    'manage_options' => true,
 ));
 
 add_role('trainer', 'Trainer', array(
@@ -135,10 +138,58 @@ function login_page_shortcode($attrs)
 }
 add_shortcode('login_page', 'login_page_shortcode');
 
+function get_token($email, $password)
+{
+    global $base_api;
+
+    try {
+        $res = wp_remote_post($base_api . 'jwt-auth/v1/token', [
+            'body' => [
+                'username' => $email,
+                'password' => $password
+            ]
+        ]);
+
+        if (is_wp_error($res)) {
+            throw new Exception($res->get_error_message());
+        }
+
+        $response_body = wp_remote_retrieve_body($res);
+        $response_code = wp_remote_retrieve_response_code($res);
+
+        if ($response_code === 200) {
+            $response_data = json_decode($response_body, true);
+            if (isset($response_data['token'])) {
+                $token = $response_data['token'];
+                return $token;
+            } else {
+                throw new Exception('Token not found in API response. Response: ' . $response_body);
+            }
+        } else {
+            throw new Exception('API request failed with status code ' . $response_code);
+        }
+    } catch (Exception $e) {
+        // Handle the exception or log the error
+        echo 'Error: ' . $e->getMessage();
+        return false;
+    }
+}
 
 
+function style_date($raw_date)
+{
+    return date('M j', strtotime($raw_date));
+}
+
+function get_fullname_from_users($id, $users)
+{
+    $found = array_filter($users, function ($user) use ($id) {
+        return $id == $user->ID;
+    });
 
 
+    return reset($found)->fullname;
+}
 
 function calculate_completion_percentage($arr1, $arr2)
 {
@@ -151,4 +202,34 @@ function calculate_completion_percentage($arr1, $arr2)
         $res  = "{$ongoing_percentage}% {$completed_percentage}%";
     }
     return $res;
+}
+
+/**
+ * Create cohort metadata fields in wp_usermeta table
+ */
+function create_cohort_metadata_fields() {
+    add_user_meta(0, 'cohort_id', '', true); // Add cohort_id field
+    add_user_meta(0, 'cohort_name', '', true); // Add cohort_name field
+}
+register_activation_hook(__FILE__, 'create_cohort_metadata_fields');
+// global $response;
+// $response = get_token('admin', 'admin123');
+
+
+function get_all_projects()
+{
+    global $base_api;
+
+    $res = wp_remote_get($base_api . 'api/v1/projects', [
+        'method' => 'GET'
+    ]);
+
+    if (is_wp_error($res)) {
+        // Handle the error here
+        return false;
+    }
+
+    $res_body = wp_remote_retrieve_body($res);
+    
+    return json_decode($res_body);
 }
