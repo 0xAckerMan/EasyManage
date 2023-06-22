@@ -20,6 +20,9 @@ if (have_posts()) {
     endwhile;
 }
 
+
+
+
 get_footer();
 
 // Flush the output buffer
