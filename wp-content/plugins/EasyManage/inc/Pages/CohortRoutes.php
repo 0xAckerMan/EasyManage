@@ -49,7 +49,7 @@ class CohortRoutes {
             'methods' => WP_REST_Server::DELETABLE,
             'callback' => array($this, 'delete_cohort'),
             'permission_callback' => function () {
-                return current_user_can('delete_posts');
+                return current_user_can('edit_posts');
             }
         ));
 
@@ -57,7 +57,7 @@ class CohortRoutes {
             'methods' => WP_REST_Server::EDITABLE,
             'callback' => array($this, 'mark_cohort_as_done'),
             'permission_callback' => function () {
-                return current_user_can('edit_cohort');
+                return current_user_can('read');
             }
         ));
     }
@@ -91,6 +91,7 @@ class CohortRoutes {
         return new WP_REST_Response($cohort, 200);
     }
 
+    
     public function create_cohort(WP_REST_Request $request) {
         global $wpdb;
     
@@ -101,32 +102,54 @@ class CohortRoutes {
         $cohort_name = isset($cohort_data['c_name']) ? sanitize_text_field($cohort_data['c_name']) : '';
         $cohort_created_date = current_time('mysql');
         $cohort_end_date = isset($cohort_data['c_end_date']) ? sanitize_text_field($cohort_data['c_end_date']) : '';
-        $cohort_trainer = isset($cohort_data['c_trainer']) ? sanitize_text_field($cohort_data['c_trainer']) : '';
+        $cohort_trainer_id = isset($cohort_data['c_trainer']) ? intval($cohort_data['c_trainer']) : 0;
     
-        if (empty($cohort_name) || empty($cohort_end_date) || empty($cohort_trainer)) {
+        if (empty($cohort_name) || empty($cohort_end_date)) {
             return new WP_Error('invalid_data', 'Invalid cohort data', array('status' => 400));
         }
     
-        $insert_result = $wpdb->insert(
-            $table_name,
-            array(
-                'c_name' => $cohort_name,
-                'c_created_date' => $cohort_created_date,
-                'c_end_date' => $cohort_end_date,
-                'c_trainer' => $cohort_trainer
-            ),
-            array('%s', '%s', '%s', '%s')
-        );
+        // Check if the trainer is a valid user without a cohort assigned
+        $trainer_user = get_user_by('ID', $cohort_trainer_id);
+        if ($trainer_user && in_array('trainer', $trainer_user->roles)) {
+            $trainer_cohort = get_user_meta($cohort_trainer_id, 'cohort', true);
+            if (empty($trainer_cohort)) {
+                $insert_result = $wpdb->insert(
+                    $table_name,
+                    array(
+                        'c_name' => $cohort_name,
+                        'c_created_date' => $cohort_created_date,
+                        'c_end_date' => $cohort_end_date,
+                        'c_trainer' => $cohort_trainer_id
+                    ),
+                    array('%s', '%s', '%s', '%d')
+                );
     
-        if (!$insert_result) {
-            return new WP_Error('cohort_create_failed', 'Failed to create cohort', array('status' => 500));
+                if (!$insert_result) {
+                    return new WP_Error('cohort_create_failed', 'Failed to create cohort', array('status' => 500));
+                }
+    
+                $cohort_id = $wpdb->insert_id;
+    
+                // Update the trainer's cohort information
+                update_user_meta($cohort_trainer_id, 'cohort', $cohort_id);
+            } else {
+                return new WP_Error('invalid_trainer', 'Trainer is already assigned to a cohort', array('status' => 400));
+            }
+        } else {
+            return new WP_Error('invalid_trainer', 'Invalid trainer user', array('status' => 400));
         }
     
-        $cohort_id = $wpdb->insert_id;
         $cohort = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_name WHERE c_id = %d", $cohort_id));
     
-        return new WP_REST_Response($cohort, 201);
+        $message = 'Cohort created successfully';
+        $response_data = array(
+            'message' => $message,
+            'cohort' => $cohort
+        );
+    
+        return new WP_REST_Response($response_data, 201);
     }
+    
     
     
 
@@ -172,22 +195,32 @@ class CohortRoutes {
 
     public function delete_cohort(WP_REST_Request $request) {
         global $wpdb;
-
+    
         $cohort_id = $request->get_param('id');
         $table_name = $wpdb->prefix . 'cohorts';
-
+    
+        // Retrieve the trainer ID associated with the cohort
+        $trainer_id = $wpdb->get_var($wpdb->prepare("SELECT c_trainer FROM $table_name WHERE c_id = %d", $cohort_id));
+    
         $delete_result = $wpdb->delete(
             $table_name,
             array('c_id' => $cohort_id),
             array('%d')
         );
-
+    
         if ($delete_result === false) {
             return new WP_Error('cohort_delete_failed', 'Failed to delete cohort', array('status' => 500));
         }
-
-        return new WP_REST_Response(null, 204);
+    
+        // Remove the cohort ID from the trainer's user meta
+        if ($trainer_id) {
+            delete_user_meta($trainer_id, 'cohort');
+        }
+    
+        return new WP_REST_Response('Cohort deleted successfully', 200);
     }
+    
+    
 
     public function mark_cohort_as_done(WP_REST_Request $request) {
         global $wpdb;
