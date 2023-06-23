@@ -47,20 +47,18 @@ class ProgramManager
             }
         ));
     }
-
     public function create_trainer($request)
     {
         $user_data = $request->get_json_params();
     
         // Validate required fields
-        if (empty($user_data['fullname']) || empty($user_data['email']) || empty($user_data['password']) || empty($user_data['cohort'])) {
+        if (empty($user_data['fullname']) || empty($user_data['email']) || empty($user_data['password'])) {
             return new WP_Error('create_failed', 'Missing required fields', ['status' => 400]);
         }
     
         $fullname = $user_data['fullname'];
         $email = $user_data['email'];
         $password = $user_data['password'];
-        $cohort = $user_data['cohort']; // Added cohort field
         $is_active = true; // Set the user as active by default
     
         // Validate email address
@@ -73,16 +71,7 @@ class ProgramManager
             return new WP_Error('create_failed', 'User with the same email already exists', ['status' => 409]);
         }
     
-        // Check if the cohort exists
-        global $wpdb;
-        $cohort_table = $wpdb->prefix . 'cohorts';
-        $cohort_exists = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $cohort_table WHERE c_id = %d", $cohort));
-    
-        if (!$cohort_exists) {
-            return new WP_Error('create_failed', 'Assigned cohort does not exist', ['status' => 400]);
-        }
-    
-        $role = isset($user_data['role'][0]) ? $user_data['role'][0] : 'trainer'; // Set the role as "trainee" if not provided
+        $role = 'trainer'; // Set the role as "trainer"
     
         $user_id = wp_insert_user([
             'user_nicename' => $fullname,
@@ -96,14 +85,12 @@ class ProgramManager
             return new WP_Error('create_failed', $user_id->get_error_message(), ['status' => 500]);
         }
     
-        // Update the user meta for the cohort field
-        update_user_meta($user_id, 'cohort', $cohort);
-    
         // Update the user meta for the is_active field
         update_user_meta($user_id, 'is_active', $is_active);
     
         return 'User created successfully';
     }
+     
     
 
     public function delete_user($request)
