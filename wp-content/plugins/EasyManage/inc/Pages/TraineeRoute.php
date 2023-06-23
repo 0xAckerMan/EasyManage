@@ -22,8 +22,6 @@ class TraineeRoute{
 
     }
 
-
-
     public function get_trainees()
     {
         $trainees = get_users([
