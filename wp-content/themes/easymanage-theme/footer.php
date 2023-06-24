@@ -1,10 +1,9 @@
-<footer>
+<footer style="bottom:0;">
     <?php echo bloginfo('name') ?> &copy 2023
 </footer>
 </div>
 
 </div>
-
 </div>
 
 
