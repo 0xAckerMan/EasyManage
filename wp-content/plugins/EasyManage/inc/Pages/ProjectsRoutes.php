@@ -81,17 +81,25 @@ class ProjectsRoutes{
         register_rest_route('api/v1', '/projects/trainee/(?P<id>[\d]+)', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_trainee_projects'),
-            'permission_callback' => function() {
-                return current_user_can('read');
-            }
+            // 'permission_callback' => function() {
+            //     return current_user_can('read');
+            // }
         ));
 
         register_rest_route('api/v1', '/projects/trainee/(?P<id>[\d]+)/completed', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_trainee_completed_projects'),
-            'permission_callback' => function() {
-                return current_user_can('read');
-            }
+            // 'permission_callback' => function() {
+            //     return current_user_can('read');
+            // }
+        ));
+
+        register_rest_route('api/v1', '/projects/trainee/(?P<id>[\d]+)/active', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_trainee_active_projects'),
+            // 'permission_callback' => function() {
+            //     return current_user_can('read');
+            // }
         ));
 
         register_rest_route('api/v1', '/projects/(?P<id>[\d]+)/complete', array(
@@ -281,7 +289,8 @@ public function update_project($request) {
     public function get_trainee_projects($request) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'projects';
-        $query = "SELECT * FROM $table_name WHERE p_assigned_to = $request[id] AND p_status = 0";
+        $query = "SELECT * FROM $table_name WHERE p_assigned_to = $request[id]";
+        // AND p_status = 0
         $projects = $wpdb->get_results($query);
     
         if (empty($projects)) {
@@ -335,6 +344,19 @@ public function update_project($request) {
     
         return $projects;
     }
+
+    public function get_trainee_active_projects($request) {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'projects';
+        $query = "SELECT * FROM $table_name WHERE p_assigned_to = $request[id] AND p_status = 0";
+        $projects = $wpdb->get_results($query);
+    
+        if (empty($projects)) {
+            return new WP_Error('no_completed_projects', 'No completed projects found for the trainee', ['status' => 404]);
+        }
+    
+        return $projects;
+    }
     
     public function get_unassigned_users($request) {
         global $wpdb;
@@ -361,79 +383,129 @@ public function update_project($request) {
     }    
 
     public function post_group_project($request) {
-        // Validate and sanitize the input data
-        $p_name = sanitize_text_field($request->get_param('p_name'));
-        $p_description = sanitize_textarea_field($request->get_param('p_description'));
-        $p_category = sanitize_text_field($request->get_param('p_category'));
-        $p_excerpt = sanitize_text_field($request->get_param('p_excerpt'));
-        $p_assigned_to = $request->get_param('p_assigned_to'); // Array of trainee IDs
-        $cohort_id = $request->get_param('cohort_id'); // Cohort ID from the user
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'projects';
     
-        // Validate the number of projects allocated to the trainees
-        $max_projects = 3; // Maximum number of projects per trainee
-        foreach ($p_assigned_to as $trainee_id) {
-            $trainee_projects_count = $this->get_trainee_projects_count($trainee_id);
-            if ($trainee_projects_count >= $max_projects) {
-                return new WP_Error('max_project_allocation_reached', 'Maximum project allocation reached for one or more trainees.', array('status' => 400));
-            }
+        // Get the current user ID
+        $current_user_id = get_current_user_id();
+    
+        // Check the number of projects allocated to the current user
+        $projects_count = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM $table_name WHERE p_assigned_to = %d",
+                $current_user_id
+            )
+        );
+    
+        // Check if the user has already reached the maximum allocation of 3 projects
+        if ($projects_count >= 3) {
+            return new WP_Error('max_project_allocation_reached', 'Maximum project allocation reached', ['status' => 400]);
         }
     
-        // Create the group project entry in the database
-        $project_data = array(
+        // Validate and sanitize the input data
+        $p_name = sanitize_text_field($request['p_name']);
+        $p_description = sanitize_textarea_field($request['p_description']);
+        $p_category = sanitize_text_field($request['p_category']);
+        $p_excerpt = sanitize_text_field($request['p_excerpt']);
+        $p_due_date = sanitize_text_field($request['p_due_date']);
+        $p_cohort_id = absint($request['p_cohort_id']);
+        
+        // Insert the project into the projects table
+        $project_rows = $wpdb->insert($table_name, array(
             'p_name' => $p_name,
             'p_description' => $p_description,
             'p_category' => $p_category,
             'p_excerpt' => $p_excerpt,
-            'p_assigned_by' => get_current_user_id(), // Assign the current user as the project creator
+            'p_assigned_by' => $current_user_id,
             'p_created_date' => current_time('mysql'),
-            'p_due_date' => current_time('mysql'), // Set the due date as the current time for illustration purposes
-            'p_cohort_id' => $cohort_id, // Set the cohort ID from the user
-        );
+            'p_due_date' => $p_due_date,
+            'p_cohort_id' => $p_cohort_id,
+        ));
     
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'projects';
-        $insert_result = $wpdb->insert($table_name, $project_data);
-    
-        if ($insert_result === false) {
-            return new WP_Error('project_creation_failed', 'Failed to create the group project.', array('status' => 500));
+        if ($project_rows == 1) {
+            return 'Project created successfully';
+        } else {
+            return new WP_Error('project_creation_failed', 'Project creation failed', ['status' => 500]);
         }
-    
-        // Retrieve the generated project ID
-        $project_id = $wpdb->insert_id;
-    
-        // Assign the group project to the selected trainees
-        foreach ($p_assigned_to as $trainee_id) {
-            $this->assign_project_to_trainee($project_id, $trainee_id);
-        }
-    
-        return 'Group project created successfully.';
     }
     
-    // Helper method to get the number of projects allocated to a trainee
-// Helper method to get the number of projects allocated to a trainee
-private function get_trainee_projects_count($trainee_id) {
-    global $wpdb;
-    $table_name = $wpdb->prefix . 'projects';
+    
+    
 
-    return $wpdb->get_var(
-        $wpdb->prepare(
-            "SELECT COUNT(*) FROM $table_name WHERE p_assigned_to = %d",
-            $trainee_id
-        )
-    );
-}
+//     public function post_group_project($request) {
+//         // Validate and sanitize the input data
+//         $p_name = sanitize_text_field($request->get_param('p_name'));
+//         $p_description = sanitize_textarea_field($request->get_param('p_description'));
+//         $p_category = sanitize_text_field($request->get_param('p_category'));
+//         $p_excerpt = sanitize_text_field($request->get_param('p_excerpt'));
+//         $p_assigned_to = $request->get_param('p_assigned_to'); // Array of trainee IDs
+//         $cohort_id = $request->get_param('cohort_id'); // Cohort ID from the user
+    
+//         // Validate the number of projects allocated to the trainees
+//         $max_projects = 3; // Maximum number of projects per trainee
+//         foreach ($p_assigned_to as $trainee_id) {
+//             $trainee_projects_count = $this->get_trainee_projects_count($trainee_id);
+//             if ($trainee_projects_count >= $max_projects) {
+//                 return new WP_Error('max_project_allocation_reached', 'Maximum project allocation reached for one or more trainees.', array('status' => 400));
+//             }
+//         }
+    
+//         // Create the group project entry in the database
+//         $project_data = array(
+//             'p_name' => $p_name,
+//             'p_description' => $p_description,
+//             'p_category' => $p_category,
+//             'p_excerpt' => $p_excerpt,
+//             'p_assigned_by' => get_current_user_id(), // Assign the current user as the project creator
+//             'p_created_date' => current_time('mysql'),
+//             'p_due_date' => current_time('mysql'), // Set the due date as the current time for illustration purposes
+//             'p_cohort_id' => $cohort_id, // Set the cohort ID from the user
+//         );
+    
+//         global $wpdb;
+//         $table_name = $wpdb->prefix . 'projects';
+//         $insert_result = $wpdb->insert($table_name, $project_data);
+    
+//         if ($insert_result === false) {
+//             return new WP_Error('project_creation_failed', 'Failed to create the group project.', array('status' => 500));
+//         }
+    
+//         // Retrieve the generated project ID
+//         $project_id = $wpdb->insert_id;
+    
+//         // Assign the group project to the selected trainees
+//         foreach ($p_assigned_to as $trainee_id) {
+//             $this->assign_project_to_trainee($project_id, $trainee_id);
+//         }
+    
+//         return 'Group project created successfully.';
+//     }
+    
+//     // Helper method to get the number of projects allocated to a trainee
+// // Helper method to get the number of projects allocated to a trainee
+// private function get_trainee_projects_count($trainee_id) {
+//     global $wpdb;
+//     $table_name = $wpdb->prefix . 'projects';
 
-// Helper method to assign a project to a trainee
-private function assign_project_to_trainee($project_id, $trainee_id) {
-    global $wpdb;
-    $table_name = $wpdb->prefix . 'projects';
+//     return $wpdb->get_var(
+//         $wpdb->prepare(
+//             "SELECT COUNT(*) FROM $table_name WHERE p_assigned_to = %d",
+//             $trainee_id
+//         )
+//     );
+// }
 
-    $wpdb->update(
-        $table_name,
-        array('p_assigned_to' => $trainee_id),
-        array('p_id' => $project_id)
-    );
-}
+// // Helper method to assign a project to a trainee
+// private function assign_project_to_trainee($project_id, $trainee_id) {
+//     global $wpdb;
+//     $table_name = $wpdb->prefix . 'projects';
+
+//     $wpdb->update(
+//         $table_name,
+//         array('p_assigned_to' => $trainee_id),
+//         array('p_id' => $project_id)
+//     );
+// }
 
     
 }
