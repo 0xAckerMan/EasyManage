@@ -21,9 +21,9 @@ class UsersRoutes
         register_rest_route('api/v1', 'users', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_users'),
-            'permission_callback' => function () {
-                return current_user_can('manage_options');
-            }
+            // 'permission_callback' => function () {
+            //     return current_user_can('manage_options');
+            // }
         ));
 
         register_rest_route('api/v1', '/users/(?P<id>[\d]+)', array(
