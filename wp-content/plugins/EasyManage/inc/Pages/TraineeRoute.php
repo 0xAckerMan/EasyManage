@@ -14,9 +14,9 @@ class TraineeRoute{
         register_rest_route('api/v1', 'users/trainees', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_trainees'),
-            'permission_callback' => function () {
-                return current_user_can('read');
-            }
+            // 'permission_callback' => function () {
+            //     return current_user_can('read');
+            // }
         ));
 
 
