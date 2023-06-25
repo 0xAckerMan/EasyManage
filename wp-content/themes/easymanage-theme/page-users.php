@@ -2,35 +2,53 @@
 
 <?php
 // Define the array of sample users accessible to all roles
-$users = [
-    [
-        'fullname' => 'Eliot Alderson',
-        'email' => 'Eliot@mrrobot.com',
-        'role' => 'Program Manager'
-    ],
-    [
-        'fullname' => 'John Wick',
-        'email' => 'johnwick@localhost.com',
-        'role' => 'Trainer'
-    ],
-    [
-        'fullname' => 'Kevin Mitnick',
-        'email' => 'kevinmitnick@darkweb.com',
-        'role' => 'Trainee'
-    ]
-];
+// $users = [
+//     [
+//         'fullname' => 'Eliot Alderson',
+//         'email' => 'Eliot@mrrobot.com',
+//         'role' => 'Program Manager'
+//     ],
+//     [
+//         'fullname' => 'John Wick',
+//         'email' => 'johnwick@localhost.com',
+//         'role' => 'Trainer'
+//     ],
+//     [
+//         'fullname' => 'Kevin Mitnick',
+//         'email' => 'kevinmitnick@darkweb.com',
+//         'role' => 'Trainee'
+//     ]
+// ];
 
 // show admin employees not projects
-$userRole = '';
-if (current_user_can('administrator')) {
-    $userRole = 'admin';
-} elseif (current_user_can('program-manager')) {
-    $userRole = 'program_manager';
-} elseif (current_user_can('trainer')) {
-    $userRole = 'trainer';
-} elseif (current_user_can('trainee')) {
-    $userRole = 'trainee';
+// $userRole = '';
+// if (current_user_can('administrator')) {
+//     $userRole = 'admin';
+// } elseif (current_user_can('program-manager')) {
+//     $userRole = 'program_manager';
+// } elseif (current_user_can('trainer')) {
+//     $userRole = 'trainer';
+// } elseif (current_user_can('trainee')) {
+//     $userRole = 'trainee';
+// }
+
+// $users = get_all_users();
+
+
+if(is_user_in_role(wp_get_current_user(), 'administrator')){
+    $users = get_all_users();
+    var_dump($users);
+}elseif(is_user_in_role(wp_get_current_user(),'trainer')){
+    $users = get_all_trainees();
+    var_dump($users);
+}elseif(is_user_in_role(wp_get_current_user(),'trainee')){
+    $users = get_all_trainees();
+    var_dump($users);
+}elseif(is_user_in_role(wp_get_current_user(),'program-manager')){
+    $users = get_all_users();
+    var_dump($users);
 }
+
 ?>
 <div class="employees-con">
 <div class="section-header">
@@ -57,19 +75,35 @@ if (current_user_can('administrator')) {
                 Options
             </div>
         </div>
+
         <?php
         $i = 0;
         foreach ($users as $user) {
         ?>
+
+
             <div class="employee-d">
-                <div class="e-index"><?php echo ++$i; ?>.</div>
-                <div class="e-fullname"><?php echo $user['fullname'] ?></div>
-                <div class="e-role"><?php echo $user['role'] ?></div>
-                <div class="e-options">
-                    <ion-icon name='create' class="edit"></ion-icon>
-                    <ion-icon name='trash' class="delete"></ion-icon>
+                    <div class="e-index"><?php echo ++$i; ?>.</div>
+                    <div class="e-fullname"><?php echo $user->fullname ?></div>
+                    <div class="e-role"><?php echo $user->roles[0] ?></div>
+
+                    <div class="e-options">
+                        <?php
+                        if (current_user_can('administrator')) {
+                        ?>
+                            <a href="<?php echo site_url('/update-employee?id=' . $user->id) ?>"><ion-icon name='create' class="edit"></ion-icon></a>
+
+                            <form action="" method="post">
+                                <input type="hidden" name="delete-id" value="<?php echo $user->id ?>">
+                                <button type="submit" name="delete-employee">
+                                    <ion-icon name='trash' class="delete"></ion-icon>
+                                </button>
+                            </form>
+                        <?php
+                        }
+                        ?>
+                    </div>
                 </div>
-            </div>
         <?php
         }
         ?>
