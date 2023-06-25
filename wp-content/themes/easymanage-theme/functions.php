@@ -138,6 +138,13 @@ function login_page_shortcode($attrs)
 }
 add_shortcode('login_page', 'login_page_shortcode');
 
+function redirect_on_logout()
+{
+    wp_redirect(site_url('/login'));
+    exit();
+}
+add_action('wp_logout', 'redirect_on_logout');
+
 function get_token($email, $password)
 {
     global $base_api;
@@ -231,5 +238,81 @@ function get_all_projects()
 
     $res_body = wp_remote_retrieve_body($res);
     
+    return json_decode($res_body);
+}
+
+
+function get_trainee_projects($trainee_id){
+    global $base_api;
+
+    $res = wp_remote_get($base_api . "api/v1/projects/trainee/$trainee_id",[
+        'methods' => 'GET'
+    ]);
+
+    $res_body = wp_remote_retrieve_body($res);
+
+    return json_decode($res_body);
+}
+
+function get_trainee_completed_project($trainee_id) {
+    global $base_api;
+
+    $res = wp_remote_get($base_api . "api/v1/projects/trainee/$trainee_id/completed", [
+        'methods' => 'GET'
+    ]);
+
+    $res_body = wp_remote_retrieve_body($res);
+
+    $decoded_body = json_decode($res_body);
+    return ($decoded_body !== null) ? $decoded_body : [];
+}
+
+
+function get_trainee_active_project($trainee_id){
+    global $base_api;
+
+    $res = wp_remote_get($base_api . "api/v1/projects/trainee/$trainee_id/active", [
+        'methods' => 'GET'
+    ]);
+
+    $res_body = wp_remote_retrieve_body($res);
+
+    return json_decode($res_body);
+}
+
+// function get_all_projects()
+// {
+//     global $base_api;
+
+//     $res = wp_remote_get($base_api . 'api/v1/projects', [
+//         'method' => 'GET',
+//         // 'headers' => ['Authorization' => 'Bearer ' . $GLOBALS['token']]
+//     ]);
+//     $res = wp_remote_retrieve_body($res);
+//     // var_dump($res);
+//     return( json_decode($res));
+// }
+
+
+function get_all_users(){
+    global $base_api;
+
+    $res = wp_remote_get($base_api . 'api/v1/users',[
+        'method' => 'GET'
+    ]);
+
+    $res_body = wp_remote_retrieve_body($res);
+
+    return json_decode($res_body);
+}
+
+function get_all_trainees(){
+    global $base_api;
+
+    $res = wp_remote_get($base_api.'api/v1/users/trainees',[
+        'methods' => 'GET'
+    ]);
+    $res_body = wp_remote_retrieve_body($res);
+
     return json_decode($res_body);
 }
