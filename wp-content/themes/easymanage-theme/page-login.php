@@ -4,7 +4,7 @@
  */
 
 // Start output buffering
-ob_start();
+// ob_start();
 
 // Check if the user is already logged in
 if (is_user_logged_in()) {
