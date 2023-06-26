@@ -103,9 +103,9 @@ class UsersRoutes
         register_rest_route('api/v1', '/users/program_manager', array(
             'methods' => 'POST',
             'callback' => array($this, 'create_program_manager'),
-            'permission_callback' => function () {
-                return current_user_can('manage_options');
-            }
+            // 'permission_callback' => function () {
+            //     return current_user_can('manage_options');
+            // }
         ));
         
         
@@ -220,13 +220,12 @@ class UsersRoutes
         $user_data = $request->get_json_params();
     
         // Validate required fields
-        if (empty($user_data['fullname']) || empty($user_data['email']) || empty($user_data['role']) || empty($user_data['password'])) {
+        if (empty($user_data['fullname']) || empty($user_data['email']) || empty($user_data['password'])) {
             return new WP_Error('create_failed', 'Missing required fields', ['status' => 400]);
         }
     
         $fullname = $user_data['fullname'];
         $email = $user_data['email'];
-        $role = $user_data['role']; // Store the role as a string
         $password = $user_data['password'];
         $is_active = true; // Set the user as active by default
     
@@ -240,10 +239,7 @@ class UsersRoutes
             return new WP_Error('create_failed', 'User with the same email already exists', ['status' => 409]);
         }
     
-        // Convert the role to a string if it's an array or object
-        if (is_array($role) || is_object($role)) {
-            $role = implode(', ', (array) $role);
-        }
+        $role = 'program-manager'; // Set the role as "trainer"
     
         $user_id = wp_insert_user([
             'user_nicename' => $fullname,
@@ -260,8 +256,9 @@ class UsersRoutes
         // Update the user meta for the is_active field
         update_user_meta($user_id, 'is_active', $is_active);
     
-        return '200 OK. Program manager created successfully';
+        return 'User created successfully';
     }
+     
     
     
 
