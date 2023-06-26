@@ -67,13 +67,13 @@ class ProjectsRoutes{
         register_rest_route('api/v1', '/projects/trainer/(?P<id>[\d]+)', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_trainer_projects'),
-            'permission_callback' => function ($request) {
-                $user = get_user_by('ID', $request['id']);
-                if (!$user || !in_array('trainer', $user->roles)) {
-                    return new WP_Error('rest_forbidden', 'Sorry, you are not allowed to do that.', array('status' => 403));
-                }
-                return true;
-            }
+            // 'permission_callback' => function ($request) {
+            //     $user = get_user_by('ID', $request['id']);
+            //     if (!$user || !in_array('trainer', $user->roles)) {
+            //         return new WP_Error('rest_forbidden', 'Sorry, you are not allowed to do that.', array('status' => 403));
+            //     }
+            //     return true;
+            // }
         ));
 
 
@@ -129,8 +129,20 @@ class ProjectsRoutes{
             return new WP_Error('projects_not_found', 'No projects found', ['status' => 404]);
         }
     
-        return rest_ensure_response($projects);
+        // Format the response with assigned users
+        $formatted_projects = array();
+        foreach ($projects as $project) {
+            $project_data = (array) $project;
+            $project_id = $project_data['p_id'];
+            $assigned_users = $wpdb->get_col("SELECT user_id FROM {$wpdb->prefix}group_projects WHERE project_id = $project_id");
+            $project_data['assigned_users'] = $assigned_users;
+            $formatted_projects[] = $project_data;
+        }
+    
+        return rest_ensure_response($formatted_projects);
     }
+    
+    
     
     
     
@@ -138,22 +150,55 @@ class ProjectsRoutes{
     // Call for the single_project route
     public function get_project($request) {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'projects';
-        $query = "SELECT * FROM $table_name WHERE p_id = $request[id]";
+        $projects_table_name = $wpdb->prefix . 'projects';
+        $group_projects_table_name = $wpdb->prefix . 'group_projects';
+    
+        $project_id = absint($request['id']);
+    
+        $query = "SELECT p.*, g.user_id AS assigned_user_id
+                  FROM $projects_table_name AS p
+                  LEFT JOIN $group_projects_table_name AS g ON p.p_id = g.project_id
+                  WHERE p.p_id = $project_id";
+    
         $project = $wpdb->get_results($query);
     
         if (!$project) {
             return new WP_Error('project_not_found', 'Project not found', ['status' => 404]);
         }
     
-        return $project;
+        // Group the assigned users by project
+        $grouped_project = array();
+        foreach ($project as $row) {
+            $project_id = $row->p_id;
+    
+            // Skip rows where assigned_user_id is null
+            if ($row->assigned_user_id === null) {
+                continue;
+            }
+    
+            if (!isset($grouped_project[$project_id])) {
+                $grouped_project[$project_id] = (array) $row;
+                $grouped_project[$project_id]['assigned_users'] = array();
+            }
+    
+            // Add assigned users to the assigned_users array
+            $grouped_project[$project_id]['assigned_users'][] = $row->assigned_user_id;
+        }
+    
+        // Convert the grouped project array to a simple array
+        $project = array_values($grouped_project);
+    
+        return rest_ensure_response($project);
     }
+    
+    
     
     
     // Call for the post_projects route
     public function post_project($request) {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'projects';
+        $projects_table_name = $wpdb->prefix . 'projects';
+        $group_projects_table_name = $wpdb->prefix . 'group_projects';
     
         // Get the current user ID
         $current_user_id = get_current_user_id();
@@ -161,7 +206,7 @@ class ProjectsRoutes{
         // Check the number of projects allocated to the current user
         $projects_count = $wpdb->get_var(
             $wpdb->prepare(
-                "SELECT COUNT(*) FROM $table_name WHERE p_assigned_to = %d",
+                "SELECT COUNT(*) FROM $projects_table_name WHERE p_assigned_by = %d",
                 $current_user_id
             )
         );
@@ -178,48 +223,41 @@ class ProjectsRoutes{
         $p_excerpt = sanitize_text_field($request['p_excerpt']);
         $p_due_date = sanitize_text_field($request['p_due_date']);
         $p_cohort_id = absint($request['p_cohort_id']);
-        $p_assigned_to = absint($request['p_assigned_to']);
-    
-        // Perform additional validation if required
-    
-        // Check if the assigned user is a valid trainee
-        $trainee_user = get_user_by('ID', $p_assigned_to);
-        if (!$trainee_user || !in_array('trainee', $trainee_user->roles)) {
-            return new WP_Error('invalid_trainee_user', 'Invalid trainee user', ['status' => 400]);
-        }
-    
-        // Check the number of projects allocated to the trainee
-        $trainee_projects_count = $wpdb->get_var(
-            $wpdb->prepare(
-                "SELECT COUNT(*) FROM $table_name WHERE p_assigned_to = %d",
-                $p_assigned_to
-            )
-        );
-    
-        // Check if the trainee has already reached the maximum allocation of 3 projects
-        if ($trainee_projects_count >= 3) {
-            return new WP_Error('max_trainee_project_allocation_reached', 'Maximum project allocation reached for trainee', ['status' => 400]);
-        }
+        $assigned_users = (array) $request['p_assigned_to'];
+        $assigned_users = array_slice($assigned_users, 0, 3); // Limit the number of assigned users to 3
     
         // Insert the project into the projects table
-        $project_rows = $wpdb->insert($table_name, array(
+        $project_data = array(
             'p_name' => $p_name,
             'p_description' => $p_description,
             'p_category' => $p_category,
             'p_excerpt' => $p_excerpt,
-            'p_assigned_to' => $p_assigned_to,
             'p_assigned_by' => $current_user_id,
             'p_created_date' => current_time('mysql'),
             'p_due_date' => $p_due_date,
             'p_cohort_id' => $p_cohort_id,
-        ));
+        );
+    
+        $project_rows = $wpdb->insert($projects_table_name, $project_data);
     
         if ($project_rows == 1) {
+            $project_id = $wpdb->insert_id;
+    
+            // Insert assigned users into the group_projects table
+            foreach ($assigned_users as $assigned_user_id) {
+                $wpdb->insert($group_projects_table_name, array(
+                    'user_id' => $assigned_user_id,
+                    'project_id' => $project_id,
+                ));
+            }
+    
             return 'Project created successfully';
         } else {
             return new WP_Error('project_creation_failed', 'Project creation failed', ['status' => 500]);
         }
     }
+    
+
     
     
     
@@ -228,30 +266,59 @@ class ProjectsRoutes{
     
     
     // Call for the update_projects route
-public function update_project($request) {
-    $id = $request['p_id'];
-    global $wpdb;
-    $table_name = $wpdb->prefix . 'projects';
-
-    $rows = $wpdb->update(
-        $table_name,
-        array(
-            'p_name' => $request['p_name'],
-            'p_category' => $request['p_category'],
-            'p_excerpt' => $request['p_excerpt'],
-            'p_description' => $request['p_description'],
-            'p_assigned_to' => $request['p_assigned_to'],
-            'p_due_date' => $request['p_due_date'],
-        ),
-        array('p_id' => $id)
-    );
-
-    if ($rows === false) {
-        return new WP_Error('project_update_failed', 'Project update failed', ['status' => 500]);
-    } else {
+    public function update_project($request) {
+        $id = $request->get_param('id');
+        global $wpdb;
+        $projects_table_name = $wpdb->prefix . 'projects';
+        $group_projects_table_name = $wpdb->prefix . 'group_projects';
+    
+        // Update project details in the projects table
+        $project_data = array(
+            'p_name' => sanitize_text_field($request->get_param('p_name')),
+            'p_category' => sanitize_text_field($request->get_param('p_category')),
+            'p_excerpt' => sanitize_text_field($request->get_param('p_excerpt')),
+            'p_description' => sanitize_textarea_field($request->get_param('p_description')),
+            'p_due_date' => sanitize_text_field($request->get_param('p_due_date')),
+        );
+    
+        $rows_updated = $wpdb->update(
+            $projects_table_name,
+            $project_data,
+            array('p_id' => $id)
+        );
+    
+        if ($rows_updated === false) {
+            return new WP_Error('project_update_failed', 'Project update failed', ['status' => 500]);
+        }
+    
+        // Update assigned users in the group_projects table
+        if ($request->get_param('p_assigned_to')) {
+            $assigned_users = (array) $request->get_param('p_assigned_to');
+            $assigned_users = array_slice($assigned_users, 0, 3); // Limit the number of assigned users to 3
+    
+            // Delete existing assigned users for the project
+            $wpdb->delete(
+                $group_projects_table_name,
+                array('project_id' => $id)
+            );
+    
+            // Insert updated assigned users into the group_projects table
+            foreach ($assigned_users as $assigned_user_id) {
+                $wpdb->insert(
+                    $group_projects_table_name,
+                    array(
+                        'user_id' => $assigned_user_id,
+                        'project_id' => $id,
+                    )
+                );
+            }
+        }
+    
         return 'Project updated successfully';
     }
-}
+    
+
+
 
     
     
@@ -275,31 +342,91 @@ public function update_project($request) {
     //trainer projects
     public function get_trainer_projects($request) {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'projects';
-        $query = $wpdb->prepare("SELECT * FROM $table_name WHERE p_assigned_by = %d", $request['id']);
+        $projects_table_name = $wpdb->prefix . 'projects';
+        $group_projects_table_name = $wpdb->prefix . 'group_projects';
+    
+        $trainer_id = absint($request['id']);
+    
+        $query = "SELECT p.*, g.user_id AS assigned_user_id
+                  FROM $projects_table_name AS p
+                  LEFT JOIN $group_projects_table_name AS g ON p.p_id = g.project_id
+                  WHERE p.p_assigned_by = $trainer_id";
+    
         $projects = $wpdb->get_results($query);
     
         if (empty($projects)) {
-            return new WP_Error('projects_not_found', 'No projects found', array('status' => 404));
+            return new WP_Error('projects_not_found', 'No projects found', ['status' => 404]);
         }
+    
+        // Group the assigned users by project
+        $grouped_projects = array();
+        foreach ($projects as $project) {
+            $project_id = $project->p_id;
+    
+            // Skip rows where assigned_user_id is null
+            if ($project->assigned_user_id === null) {
+                continue;
+            }
+    
+            if (!isset($grouped_projects[$project_id])) {
+                $grouped_projects[$project_id] = (array) $project;
+                $grouped_projects[$project_id]['assigned_users'] = array();
+            }
+    
+            // Add assigned users to the assigned_users array
+            $grouped_projects[$project_id]['assigned_users'][] = $project->assigned_user_id;
+        }
+    
+        // Convert the grouped projects array to a simple array
+        $projects = array_values($grouped_projects);
     
         return rest_ensure_response($projects);
     }
+    
     
     public function get_trainee_projects($request) {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'projects';
-        $query = "SELECT * FROM $table_name WHERE p_assigned_to = $request[id]";
-        // AND p_status = 0
+        $projects_table_name = $wpdb->prefix . 'projects';
+        $group_projects_table_name = $wpdb->prefix . 'group_projects';
+    
+        $trainee_id = absint($request['id']);
+    
+        $query = "SELECT p.*, g.user_id AS assigned_user_id
+                  FROM $projects_table_name AS p
+                  LEFT JOIN $group_projects_table_name AS g ON p.p_id = g.project_id
+                  WHERE p.p_assigned_to = $trainee_id";
+    
         $projects = $wpdb->get_results($query);
     
         if (empty($projects)) {
-            $error = new WP_Error('no_projects_found', 'No projects found for the trainee', ['status' => 404]);
-            return $error;
+            return new WP_Error('no_projects_found', 'No projects found for the trainee', ['status' => 404]);
         }
+    
+        // Group the assigned users by project
+        $grouped_projects = array();
+        foreach ($projects as $project) {
+            $project_id = $project->p_id;
+    
+            // Skip rows where assigned_user_id is null
+            if ($project->assigned_user_id === null) {
+                continue;
+            }
+    
+            if (!isset($grouped_projects[$project_id])) {
+                $grouped_projects[$project_id] = (array) $project;
+                $grouped_projects[$project_id]['assigned_users'] = array();
+            }
+    
+            // Add assigned users to the assigned_users array
+            $grouped_projects[$project_id]['assigned_users'][] = $project->assigned_user_id;
+        }
+    
+        // Convert the grouped projects array to a simple array
+        $projects = array_values($grouped_projects);
     
         return rest_ensure_response($projects);
     }
+    
     
     
     public function complete_project($request) {
@@ -334,29 +461,90 @@ public function update_project($request) {
     }
     public function get_trainee_completed_projects($request) {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'projects';
-        $query = "SELECT * FROM $table_name WHERE p_assigned_to = $request[id] AND p_status = 1";
+        $projects_table_name = $wpdb->prefix . 'projects';
+        $group_projects_table_name = $wpdb->prefix . 'group_projects';
+    
+        $trainee_id = absint($request['id']);
+    
+        $query = "SELECT p.*, g.user_id AS assigned_user_id
+                  FROM $projects_table_name AS p
+                  LEFT JOIN $group_projects_table_name AS g ON p.p_id = g.project_id
+                  WHERE p.p_assigned_to = $trainee_id AND p.p_status = 1";
+    
         $projects = $wpdb->get_results($query);
     
         if (empty($projects)) {
             return new WP_Error('no_completed_projects', 'No completed projects found for the trainee', ['status' => 404]);
         }
     
+        // Group the assigned users by project
+        $grouped_projects = array();
+        foreach ($projects as $project) {
+            $project_id = $project->p_id;
+    
+            // Skip rows where assigned_user_id is null
+            if ($project->assigned_user_id === null) {
+                continue;
+            }
+    
+            if (!isset($grouped_projects[$project_id])) {
+                $grouped_projects[$project_id] = (array) $project;
+                $grouped_projects[$project_id]['assigned_users'] = array();
+            }
+    
+            // Add assigned users to the assigned_users array
+            $grouped_projects[$project_id]['assigned_users'][] = $project->assigned_user_id;
+        }
+    
+        // Convert the grouped projects array to a simple array
+        $projects = array_values($grouped_projects);
+    
         return $projects;
     }
-
+    
     public function get_trainee_active_projects($request) {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'projects';
-        $query = "SELECT * FROM $table_name WHERE p_assigned_to = $request[id] AND p_status = 0";
+        $projects_table_name = $wpdb->prefix . 'projects';
+        $group_projects_table_name = $wpdb->prefix . 'group_projects';
+    
+        $trainee_id = absint($request['id']);
+    
+        $query = "SELECT p.*, g.user_id AS assigned_user_id
+                  FROM $projects_table_name AS p
+                  LEFT JOIN $group_projects_table_name AS g ON p.p_id = g.project_id
+                  WHERE p.p_assigned_to = $trainee_id AND p.p_status = 0";
+    
         $projects = $wpdb->get_results($query);
     
         if (empty($projects)) {
-            return new WP_Error('no_completed_projects', 'No completed projects found for the trainee', ['status' => 404]);
+            return new WP_Error('no_active_projects', 'No active projects found for the trainee', ['status' => 404]);
         }
+    
+        // Group the assigned users by project
+        $grouped_projects = array();
+        foreach ($projects as $project) {
+            $project_id = $project->p_id;
+    
+            // Skip rows where assigned_user_id is null
+            if ($project->assigned_user_id === null) {
+                continue;
+            }
+    
+            if (!isset($grouped_projects[$project_id])) {
+                $grouped_projects[$project_id] = (array) $project;
+                $grouped_projects[$project_id]['assigned_users'] = array();
+            }
+    
+            // Add assigned users to the assigned_users array
+            $grouped_projects[$project_id]['assigned_users'][] = $project->assigned_user_id;
+        }
+    
+        // Convert the grouped projects array to a simple array
+        $projects = array_values($grouped_projects);
     
         return $projects;
     }
+    
     
     public function get_unassigned_users($request) {
         global $wpdb;
@@ -386,20 +574,22 @@ public function update_project($request) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'projects';
     
-        // Get the current user ID
-        $current_user_id = get_current_user_id();
+        $user_ids = $request['user_ids'];
+        $project_id = $request['project_id'];
     
-        // Check the number of projects allocated to the current user
-        $projects_count = $wpdb->get_var(
-            $wpdb->prepare(
-                "SELECT COUNT(*) FROM $table_name WHERE p_assigned_to = %d",
-                $current_user_id
-            )
-        );
+        foreach ($user_ids as $user_id) {
+            // Check the number of projects allocated to the user
+            $projects_count = $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT COUNT(*) FROM $table_name WHERE p_assigned_to = %d",
+                    $user_id
+                )
+            );
     
-        // Check if the user has already reached the maximum allocation of 3 projects
-        if ($projects_count >= 3) {
-            return new WP_Error('max_project_allocation_reached', 'Maximum project allocation reached', ['status' => 400]);
+            // Check if the user has already reached the maximum allocation of 3 projects
+            if ($projects_count >= 3) {
+                return new WP_Error('user_project_assignment_limit_exceeded', 'User project assignment limit exceeded. A user cannot be assigned more than two projects.', ['status' => 400]);
+            }
         }
     
         // Validate and sanitize the input data
@@ -409,14 +599,14 @@ public function update_project($request) {
         $p_excerpt = sanitize_text_field($request['p_excerpt']);
         $p_due_date = sanitize_text_field($request['p_due_date']);
         $p_cohort_id = absint($request['p_cohort_id']);
-        
+    
         // Insert the project into the projects table
         $project_rows = $wpdb->insert($table_name, array(
             'p_name' => $p_name,
             'p_description' => $p_description,
             'p_category' => $p_category,
             'p_excerpt' => $p_excerpt,
-            'p_assigned_by' => $current_user_id,
+            'p_assigned_by' => $project_id,
             'p_created_date' => current_time('mysql'),
             'p_due_date' => $p_due_date,
             'p_cohort_id' => $p_cohort_id,
@@ -428,6 +618,7 @@ public function update_project($request) {
             return new WP_Error('project_creation_failed', 'Project creation failed', ['status' => 500]);
         }
     }
+    
     
     
     
