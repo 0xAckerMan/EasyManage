@@ -132,10 +132,10 @@ class CreateGroup{
         // Update the p_group_id field in the projects table
         $wpdb->update(
             "{$wpdb->prefix}projects",
-            array('p_group_id' => $project_id), // Set p_group_id to the project ID
-            array('p_id' => $project_id), // Where p_id matches the project ID
-            array('%d'), // Data type for p_group_id
-            array('%d') // Data type for p_id
+            array('p_group_id' => $project_id), 
+            array('p_id' => $project_id), 
+            array('%d'),
+            array('%d') 
         );
     
         // Return success message
