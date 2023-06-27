@@ -1,3 +1,5 @@
+<?php if (!is_user_logged_in()) wp_redirect(site_url('/login')) ?>
+
 <?php
 
 /**
@@ -9,11 +11,79 @@ get_header();
 
 <?php
 
+$id = $_GET['id'];
+
+$project = get_project($id);
+$project = reset($project);
+
+// var_dump($project);
+
+$tasks = all_project_tasks($id);
+$ongoing_tasks = array_filter($tasks, function ($tasks) {
+    return $tasks->t_status == 0;
+});
+$completed_tasks = array_filter($tasks, function ($tasks) {
+    return $tasks->t_status == 1;
+});
+
+var_dump($tasks);
+
 if (isset($_POST['delete-project'])) {
-    //call delete api here
+    $res = delete_project($id);
+    if (!is_wp_error($res)) {
+        $form_success = 'Project deleted successfully';
+    } else {
+        $form_error = 'Project not deleted';
+    }
 }
 if (isset($_POST['delete-task'])) {
-    //call delete api here
+    $t_id = $_POST['t_id'];
+    $res = delete_task($t_id);
+
+    if (!is_wp_error($res)) {
+        $form_success = 'Task deleted successfully';
+        $tasks = get_project_tasks($id);
+        $ongoing_tasks = array_filter($tasks, function ($tasks) {
+            return $tasks->t_done == 0;
+        });
+        $completed_tasks = array_filter($tasks, function ($tasks) {
+            return $tasks->t_done == 1;
+        });
+    } else {
+        $form_error = 'Task not deleted';
+    }
+}
+
+if (isset($_POST['complete_project'])) {
+    $res = complete_project($id);
+    if (!is_wp_error($res)) {
+        $form_success = 'Project completed successfully';
+        $project = get_single_project($id);
+        $project = reset($project);
+    } else {
+        $form_error = 'Project not completed';
+    }
+}
+if (isset($_POST['complete_task'])) {
+    $res = complete_task($_POST['t_id']);
+    $tasks = get_project_tasks($id);
+    $ongoing_tasks = array_filter($tasks, function ($tasks) {
+        return $tasks->t_done == 0;
+    });
+    $completed_tasks = array_filter($tasks, function ($tasks) {
+        return $tasks->t_done == 1;
+    });
+}
+
+if (isset($_POST['uncomplete_task'])) {
+    $res = uncomplete_task($_POST['t_id']);
+    $tasks = get_project_tasks($id);
+    $ongoing_tasks = array_filter($tasks, function ($tasks) {
+        return $tasks->t_done == 0;
+    });
+    $completed_tasks = array_filter($tasks, function ($tasks) {
+        return $tasks->t_done == 1;
+    });
 }
 
 ?>
@@ -155,5 +225,6 @@ $completed_tasks = array_fill(0, 3, [
     </div>
 
 </div>
-
-<?php get_footer() ?>
+</div>
+</div>
+</div>
