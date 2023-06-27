@@ -17,9 +17,9 @@ class ProjectsRoutes{
         register_rest_route('api/v1', '/projects/', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_projects'),
-            // 'permission_callback' => function() {
-            //     return current_user_can('manage_options');
-            // }
+            'permission_callback' => function() {
+                return current_user_can('manage_options');
+            }
         ));
 
         register_rest_route('api/v1', '/projects/(?P<id>[\d]+)', array(
@@ -67,13 +67,13 @@ class ProjectsRoutes{
         register_rest_route('api/v1', '/projects/trainer/(?P<id>[\d]+)', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_trainer_projects'),
-            // 'permission_callback' => function ($request) {
-            //     $user = get_user_by('ID', $request['id']);
-            //     if (!$user || !in_array('trainer', $user->roles)) {
-            //         return new WP_Error('rest_forbidden', 'Sorry, you are not allowed to do that.', array('status' => 403));
-            //     }
-            //     return true;
-            // }
+            'permission_callback' => function ($request) {
+                $user = get_user_by('ID', $request['id']);
+                if (!$user || !in_array('trainer', $user->roles)) {
+                    return new WP_Error('rest_forbidden', 'Sorry, you are not allowed to do that.', array('status' => 403));
+                }
+                return true;
+            }
         ));
 
 
@@ -212,7 +212,7 @@ class ProjectsRoutes{
         );
     
         // Check if the user has already reached the maximum allocation of 3 projects
-        if ($projects_count >= 3) {
+        if ($projects_count > 4) {
             return new WP_Error('max_project_allocation_reached', 'Maximum project allocation reached', ['status' => 400]);
         }
     
@@ -548,8 +548,39 @@ class ProjectsRoutes{
     
     public function get_unassigned_users($request) {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'users';
-        $query = "SELECT ID, user_nicename, user_email FROM $table_name WHERE ID NOT IN (SELECT p_assigned_to FROM wp_projects)";
+        $users_table = $wpdb->prefix . 'users';
+        $usermeta_table = $wpdb->prefix . 'usermeta';
+        $group_projects_table = $wpdb->prefix . 'group_projects';
+        $current_user_id = get_current_user_id(); // Get the ID of the current user
+    
+        $query = "SELECT u.ID, u.user_nicename, u.user_email
+                  FROM $users_table AS u
+                  INNER JOIN $usermeta_table AS um ON u.ID = um.user_id
+                  WHERE um.meta_key = 'wp_capabilities' AND um.meta_value LIKE '%trainee%'
+                    AND u.ID NOT IN (
+                      SELECT user_id
+                      FROM $group_projects_table
+                      GROUP BY user_id
+                      HAVING COUNT(*) >= 3
+                  )
+                  AND (u.ID IN (
+                      SELECT user_id
+                      FROM $group_projects_table
+                      WHERE project_id IN (
+                          SELECT project_id
+                          FROM $group_projects_table
+                          WHERE user_id = $current_user_id
+                      )
+                  ) OR u.ID IN (
+                      SELECT user_id
+                      FROM $group_projects_table
+                      WHERE project_id IN (
+                          SELECT p_id
+                          FROM {$wpdb->prefix}projects
+                          WHERE p_assigned_by = $current_user_id
+                      )
+                  ))";
+    
         $users = $wpdb->get_results($query);
     
         if (empty($users)) {
@@ -560,7 +591,7 @@ class ProjectsRoutes{
             $user->fullname = $user->user_nicename;
             $user->email = $user->user_email;
             $user->id = $user->ID;
-            
+    
             unset($user->user_nicename);
             unset($user->user_email);
             unset($user->ID);
@@ -568,7 +599,10 @@ class ProjectsRoutes{
         }, $users);
     
         return $modified_users;
-    }    
+    }
+    
+    
+      
 
     public function post_group_project($request) {
         global $wpdb;
