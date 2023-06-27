@@ -1,4 +1,6 @@
-<?php get_header(); ?>
+<?php if (!is_user_logged_in()) wp_redirect(site_url('/login')) ?>
+
+
 
 <?php
 // Define the array of sample users accessible to all roles
@@ -21,35 +23,37 @@
 // ];
 
 // show admin employees not projects
-// $userRole = '';
-// if (current_user_can('administrator')) {
-//     $userRole = 'admin';
-// } elseif (current_user_can('program-manager')) {
-//     $userRole = 'program_manager';
-// } elseif (current_user_can('trainer')) {
-//     $userRole = 'trainer';
-// } elseif (current_user_can('trainee')) {
-//     $userRole = 'trainee';
-// }
+$userRole = '';
+if (current_user_can('administrator')) {
+    $userRole = 'admin';
+} elseif (current_user_can('program-manager')) {
+    $userRole = 'program_manager';
+} elseif (current_user_can('trainer')) {
+    $userRole = 'trainer';
+} elseif (current_user_can('trainee')) {
+    $userRole = 'trainee';
+}
 
 // $users = get_all_users();
 
 
 if(is_user_in_role(wp_get_current_user(), 'administrator')){
     $users = get_all_users();
-    var_dump($users);
+    // var_dump($users);
 }elseif(is_user_in_role(wp_get_current_user(),'trainer')){
     $users = get_all_trainees();
-    var_dump($users);
+    // var_dump($users);
 }elseif(is_user_in_role(wp_get_current_user(),'trainee')){
     $users = get_all_trainees();
-    var_dump($users);
+    // var_dump($users);
 }elseif(is_user_in_role(wp_get_current_user(),'program-manager')){
     $users = get_all_users();
-    var_dump($users);
+    // var_dump($users);
 }
-
 ?>
+
+<?php get_header(); ?>
+
 <div class="employees-con">
 <div class="section-header">
     <h3>Active Users</h3>
