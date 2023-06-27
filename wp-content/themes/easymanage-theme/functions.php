@@ -3,6 +3,9 @@
 global $base_api;
 $base_api = 'http://localhost/EasyManage/wp-json/';
 
+global $token;
+$token = $_COOKIE['token'];
+
 function load_css()
 {
     wp_register_style('bootstrap', get_template_directory_uri() . '/bootstrap/css/bootstrap.min.css', array(), false, 'all');
@@ -194,9 +197,13 @@ function get_fullname_from_users($id, $users)
         return $id == $user->ID;
     });
 
+    if (!empty($found)) {
+        return reset($found)->fullname;
+    }
 
-    return reset($found)->fullname;
+    return ''; // or any default value you prefer
 }
+
 
 function calculate_completion_percentage($arr1, $arr2)
 {
@@ -226,9 +233,15 @@ register_activation_hook(__FILE__, 'create_cohort_metadata_fields');
 function get_all_projects()
 {
     global $base_api;
+    global $token;
 
     $res = wp_remote_get($base_api . 'api/v1/projects', [
-        'method' => 'GET'
+        'method' => 'GET',
+        'headers'=>[
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer '.$token
+        ]
+
     ]);
 
     if (is_wp_error($res)) {
@@ -241,6 +254,46 @@ function get_all_projects()
     return json_decode($res_body);
 }
 
+
+function get_project($id)
+{
+    global $base_api;
+    global $token;
+
+    $res = wp_remote_get($base_api . "api/v1/projects/$id", [
+        'method' => 'GET',
+        'headers'=>[
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer '.$token
+        ]
+
+    ]);
+
+    if (is_wp_error($res)) {
+        // Handle the error here
+        return false;
+    }
+
+    $res_body = wp_remote_retrieve_body($res);
+    
+    return json_decode($res_body);
+}
+
+function all_project_tasks($p_id)
+{
+    global $token;
+    global $base_api;
+
+    $res = wp_remote_get($base_api . 'api/v1/tasks/' . $p_id, [
+        'method' => 'GET',
+        'headers'=>[
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer '.$token
+        ]
+        ]);
+    $res = wp_remote_retrieve_body($res);
+    return json_decode($res);
+}
 
 function get_trainee_projects($trainee_id){
     global $base_api;
@@ -280,6 +333,208 @@ function get_trainee_active_project($trainee_id){
     return json_decode($res_body);
 }
 
+function get_trainers_projects($trainer_id){
+    global $base_api;
+    global $token;
+
+    $res = wp_remote_get($base_api . "api/v1/projects/trainer/$trainer_id",[
+        'methods' => 'GET',
+        'headers'=>[
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer '.$token
+        ]
+
+    ]);
+
+    $res_body = wp_remote_retrieve_body($res);
+
+    return json_decode($res_body);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function get_single_project($id)
+{
+    global $token;
+    global $base_api;
+
+    $res = wp_remote_get($base_api . 'api/v1/projects/' . $id, [
+        'headers'=>[
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer '.$token
+        ]
+    ]);
+    $res = wp_remote_retrieve_body($res);
+    return json_decode($res);
+}
+
+// function create_project($p)
+// {
+// }
+function update_project($p)
+{
+    global $token;
+    global $base_api;
+
+    $data = [
+        'p_id' => $p['p_id'],
+        'p_name' => $p['p_name'],
+        'p_category' => $p['p_category'],
+        'p_excerpt' => $p['p_excerpt'],
+        'p_description' => $p['p_description'],
+        'p_assigned_to' => $p['p_assigned_to'],
+        'p_due_date' => $p['p_due_date'],
+    ];
+
+    $res = wp_remote_get($base_api . 'api/v1/projects/' . $p['p_id'], [
+        'method' => 'PUT',
+        'body' => $data,
+        'headers'=>[
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer '.$token
+        ]
+    ]);
+    $res = wp_remote_retrieve_body($res);
+    return json_decode($res);
+}
+
+function get_project_tasks($p_id)
+{
+    global $token;
+    global $base_api;
+
+    $res = wp_remote_get($base_api . 'api/v1/tasks/' . $p_id, [
+        'method' => 'GET',
+        'headers'=>[
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer '.$token
+        ]
+    ]);
+    $res = wp_remote_retrieve_body($res);
+    return json_decode($res);
+}
+function complete_project($id)
+{
+    global $token;
+    global $base_api;
+
+    $res = wp_remote_get($base_api . 'api/v1/projects/' . $id . "/complete", [
+        'method' => 'POST',
+        'headers'=>[
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer '.$token
+        ],
+        'data_format' => 'body'
+    ]);
+    $res = wp_remote_retrieve_body($res);
+    return json_decode($res);
+}
+
+function delete_project($id)
+{
+    global $base_api;
+
+    $res = wp_remote_get($base_api . 'api/v1/projects/' . $id, [
+        'method' => 'DELETE',
+        'headers' => ['Authorization' => 'Bearer ' . $GLOBALS['token'], 'Content-Type' => 'application/json'],
+        'data_format' => 'body'
+    ]);
+    $res = wp_remote_retrieve_body($res);
+    return json_decode($res);
+}
+
+function get_single_task($id)
+{
+    global $base_api;
+
+    $res = wp_remote_get($base_api . 'api/v1/tasks/single/' . $id, [
+        'method' => 'GET',
+        'headers' => ['Authorization' => 'Bearer ' . $GLOBALS['token']]
+    ]);
+    $res = wp_remote_retrieve_body($res);
+    return json_decode($res);
+}
+
+function complete_task($id)
+{
+    global $base_api;
+
+    $res = wp_remote_get($base_api . 'api/v1/tasks/' . $id . "/complete", [
+        'method' => 'POST',
+        'headers' => ['Authorization' => 'Bearer ' . $GLOBALS['token'], 'Content-Type' => 'application/json'],
+        'data_format' => 'body'
+    ]);
+    $res = wp_remote_retrieve_body($res);
+    return json_decode($res);
+}
+function uncomplete_task($id)
+{
+    global $base_api;
+
+    $res = wp_remote_get($base_api . 'api/v1/tasks/' . $id . "/uncomplete", [
+        'method' => 'POST',
+        'headers' => ['Authorization' => 'Bearer ' . $GLOBALS['token'], 'Content-Type' => 'application/json'],
+        'data_format' => 'body'
+    ]);
+    $res = wp_remote_retrieve_body($res);
+    return json_decode($res);
+}
+function delete_task($id)
+{
+    global $base_api;
+
+    $res = wp_remote_get($base_api . 'api/v1/tasks/' . $id, [
+        'method' => 'DELETE',
+        'headers' => ['Authorization' => 'Bearer ' . $GLOBALS['token'], 'Content-Type' => 'application/json'],
+        'data_format' => 'body'
+    ]);
+    $res = wp_remote_retrieve_body($res);
+    return json_decode($res);
+}
+
+function mark_task_complete($id)
+{
+    global $base_api;
+
+    $res = wp_remote_get($base_api . "api/v1/tasks/$id/complete", [
+        'method' => 'POST',
+        'headers' => ['Authorization' => 'Bearer ' . $GLOBALS['token']]
+    ]);
+    $res = wp_remote_retrieve_body($res);
+    return json_decode($res);
+}
+function mark_task_uncomplete($id)
+{
+    global $base_api;
+
+    $res = wp_remote_get($base_api . "api/v1/tasks/$id/uncomplete", [
+        'method' => 'POST',
+        'headers' => ['Authorization' => 'Bearer ' . $GLOBALS['token']]
+    ]);
+    $res = wp_remote_retrieve_body($res);
+    return json_decode($res);
+}
+
+
+
+
+
+
+
+
+
+
+
+
 // function get_all_projects()
 // {
 //     global $base_api;
@@ -296,9 +551,14 @@ function get_trainee_active_project($trainee_id){
 
 function get_all_users(){
     global $base_api;
+    global $token;
 
     $res = wp_remote_get($base_api . 'api/v1/users',[
-        'method' => 'GET'
+        'method' => 'GET',
+        'headers'=>[
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer '.$token
+        ]
     ]);
 
     $res_body = wp_remote_retrieve_body($res);
@@ -314,5 +574,29 @@ function get_all_trainees(){
     ]);
     $res_body = wp_remote_retrieve_body($res);
 
+    return json_decode($res_body);
+}
+
+
+function get_all_unassigned()
+{
+    global $base_api;
+    global $token;
+
+    $res = wp_remote_get($base_api . 'api/v1/projects/unassigned', [
+        'method' => 'GET',
+        'headers'=>[
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer '.$token
+        ]
+    ]);
+
+    if (is_wp_error($res)) {
+        // Handle the error here
+        return false;
+    }
+
+    $res_body = wp_remote_retrieve_body($res);
+    
     return json_decode($res_body);
 }
