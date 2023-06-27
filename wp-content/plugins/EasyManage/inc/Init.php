@@ -20,6 +20,9 @@ final class Init{
             Pages\TraineeRoute::class,
             Pages\ProgramManager::class,
             Pages\CohortRoutes::class,
+            Pages\CreateGroup::class,
+            Pages\TasksRoutes::class,
+            API\Login::class,
         ];
     }
     /**
