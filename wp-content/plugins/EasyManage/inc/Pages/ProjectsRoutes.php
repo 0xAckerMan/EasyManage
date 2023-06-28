@@ -81,25 +81,25 @@ class ProjectsRoutes{
         register_rest_route('api/v1', '/projects/trainee/(?P<id>[\d]+)', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_trainee_projects'),
-            // 'permission_callback' => function() {
-            //     return current_user_can('read');
-            // }
+            'permission_callback' => function() {
+                return current_user_can('read');
+            }
         ));
 
         register_rest_route('api/v1', '/projects/trainee/(?P<id>[\d]+)/completed', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_trainee_completed_projects'),
-            // 'permission_callback' => function() {
-            //     return current_user_can('read');
-            // }
+            'permission_callback' => function() {
+                return current_user_can('read');
+            }
         ));
 
         register_rest_route('api/v1', '/projects/trainee/(?P<id>[\d]+)/active', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_trainee_active_projects'),
-            // 'permission_callback' => function() {
-            //     return current_user_can('read');
-            // }
+            'permission_callback' => function() {
+                return current_user_can('read');
+            }
         ));
 
         register_rest_route('api/v1', '/projects/(?P<id>[\d]+)/complete', array(
@@ -355,7 +355,7 @@ class ProjectsRoutes{
         $projects = $wpdb->get_results($query);
     
         if (empty($projects)) {
-            return new WP_Error('projects_not_found', 'No projects found', ['status' => 404]);
+            return [];
         }
     
         // Group the assigned users by project
@@ -394,12 +394,13 @@ class ProjectsRoutes{
         $query = "SELECT p.*, g.user_id AS assigned_user_id
                   FROM $projects_table_name AS p
                   LEFT JOIN $group_projects_table_name AS g ON p.p_id = g.project_id
-                  WHERE p.p_assigned_to = $trainee_id";
+                  WHERE g.user_id = $trainee_id";
     
         $projects = $wpdb->get_results($query);
     
         if (empty($projects)) {
-            return new WP_Error('no_projects_found', 'No projects found for the trainee', ['status' => 404]);
+            // return new WP_Error('no_projects_found', 'No projects found for the trainee', ['status' => 404]);
+            return [];
         }
     
         // Group the assigned users by project
@@ -426,6 +427,7 @@ class ProjectsRoutes{
     
         return rest_ensure_response($projects);
     }
+    
     
     
     
@@ -469,12 +471,14 @@ class ProjectsRoutes{
         $query = "SELECT p.*, g.user_id AS assigned_user_id
                   FROM $projects_table_name AS p
                   LEFT JOIN $group_projects_table_name AS g ON p.p_id = g.project_id
-                  WHERE p.p_assigned_to = $trainee_id AND p.p_status = 1";
+                  WHERE p.p_status = 1 AND EXISTS (
+                      SELECT 1 FROM $group_projects_table_name WHERE project_id = p.p_id AND user_id = $trainee_id
+                  )";
     
         $projects = $wpdb->get_results($query);
     
         if (empty($projects)) {
-            return new WP_Error('no_completed_projects', 'No completed projects found for the trainee', ['status' => 404]);
+            return [];
         }
     
         // Group the assigned users by project
@@ -501,6 +505,8 @@ class ProjectsRoutes{
     
         return $projects;
     }
+    
+    
     
     public function get_trainee_active_projects($request) {
         global $wpdb;
@@ -512,12 +518,13 @@ class ProjectsRoutes{
         $query = "SELECT p.*, g.user_id AS assigned_user_id
                   FROM $projects_table_name AS p
                   LEFT JOIN $group_projects_table_name AS g ON p.p_id = g.project_id
-                  WHERE p.p_assigned_to = $trainee_id AND p.p_status = 0";
+                  WHERE g.user_id = $trainee_id AND p.p_status = 'active'";
     
         $projects = $wpdb->get_results($query);
     
         if (empty($projects)) {
-            return new WP_Error('no_active_projects', 'No active projects found for the trainee', ['status' => 404]);
+            // return new WP_Error('no_active_projects', 'No active projects found for the trainee', ['status' => 404]);
+            return [];
         }
     
         // Group the assigned users by project
@@ -544,6 +551,7 @@ class ProjectsRoutes{
     
         return $projects;
     }
+    
     
     
     public function get_unassigned_users($request) {
