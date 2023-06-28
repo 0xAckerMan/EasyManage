@@ -38,6 +38,7 @@ if (is_user_in_role(wp_get_current_user(), 'program-manager')) {
     });
 }
 
+
 ?>
 
 
@@ -209,18 +210,22 @@ get_header();
         </div>
     <?php endif; ?>
 
+    <?php
+        $t_projects = get_trainers_projects(get_current_user_id());
 
-    <?php if (current_user_can('trainer') || count($projects) === 0) : ?>
-
-        <?php
-        $projects = get_trainers_projects(get_current_user_id());
-        $t_active = array_filter($projects, function ($t_project) {
+        // var_dump($t_projects);
+        $t_active = array_filter($t_projects, function ($t_project) {
             return $t_project->p_status == 0;
         });
-        $t_completed = array_filter($projects, function ($t_project) {
+        $t_completed = array_filter($t_projects, function ($t_project) {
             return $t_project->p_status == 1;
         });
-        // echo "aaaaaaaaaaaaaaaaaa"
+    ?>
+
+    <?php if (current_user_can('trainer'))?>
+
+        <?php
+        // var_dump("$t_active");
         ?>
         <div class="overview-flex" style="width: 118%; margin-left: -14%;">
 
@@ -247,7 +252,7 @@ get_header();
 
             <div class="overview-card">
                 <p class="overview-title"> My Projects Overview</p>
-                <p class="overview-total"><?php echo count($projects); ?></p>
+                <p class="overview-total"><?php echo count($t_projects);?></p>
                 <div class="overview-percent-con" style="grid-template-columns: 30% 70%;">
                     <div></div>
                     <div></div>
@@ -284,14 +289,14 @@ get_header();
                     <span class="ps-detail">Project Detail</span>
                     <span class="ps-progress">Progress</span>
                 </div>
-                <?php if (empty($projects)) : ?>
+                <?php if (empty($t_projects)) : ?>
                     <div class="project-task list-border list-empty">
                         No Projects Found
                     </div>
                 <?php endif; ?>
 
                 <?php
-                $limitedProjects = array_slice($projects, 0, 2); // Extract the first three projects
+                $limitedProjects = array_slice($t_projects, 0, 2); // Extract the first three projects
 
                 foreach ($limitedProjects as $project) {
                 ?>
@@ -325,7 +330,7 @@ get_header();
                 ?>
             </div>
         </div>
-    <?php elseif (is_user_in_role(wp_get_current_user(), 'trainee')) : ?>
+    <?php if (is_user_in_role(wp_get_current_user(), 'trainee')) : ?>
 
         <?php
         $s_projects = get_trainee_projects(get_current_user_id());
