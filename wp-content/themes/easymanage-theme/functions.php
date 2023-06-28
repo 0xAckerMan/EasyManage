@@ -4,7 +4,9 @@ global $base_api;
 $base_api = 'http://localhost/EasyManage/wp-json/';
 
 global $token;
-$token = $_COOKIE['token'];
+
+$token = ($_COOKIE['token']);
+
 
 function load_css()
 {
@@ -297,9 +299,14 @@ function all_project_tasks($p_id)
 
 function get_trainee_projects($trainee_id){
     global $base_api;
+    global $token;
 
     $res = wp_remote_get($base_api . "api/v1/projects/trainee/$trainee_id",[
-        'methods' => 'GET'
+        'methods' => 'GET',
+        'headers'=>[
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer '.$token
+        ]
     ]);
 
     $res_body = wp_remote_retrieve_body($res);
@@ -309,9 +316,14 @@ function get_trainee_projects($trainee_id){
 
 function get_trainee_completed_project($trainee_id) {
     global $base_api;
+    global $token;
 
     $res = wp_remote_get($base_api . "api/v1/projects/trainee/$trainee_id/completed", [
-        'methods' => 'GET'
+        'methods' => 'GET',
+        'headers'=>[
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer '.$token
+        ]
     ]);
 
     $res_body = wp_remote_retrieve_body($res);
@@ -323,9 +335,14 @@ function get_trainee_completed_project($trainee_id) {
 
 function get_trainee_active_project($trainee_id){
     global $base_api;
+    global $token;
 
     $res = wp_remote_get($base_api . "api/v1/projects/trainee/$trainee_id/active", [
-        'methods' => 'GET'
+        'methods' => 'GET',
+        'headers'=>[
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer '.$token
+        ]
     ]);
 
     $res_body = wp_remote_retrieve_body($res);
@@ -580,6 +597,7 @@ function mark_task_uncomplete($id)
 function get_all_users(){
     global $base_api;
     global $token;
+    // var_dump($token);
 
     $res = wp_remote_get($base_api . 'api/v1/users',[
         'method' => 'GET',
