@@ -442,10 +442,14 @@ function complete_project($id)
 function delete_project($id)
 {
     global $base_api;
+    global $token;
 
     $res = wp_remote_get($base_api . 'api/v1/projects/' . $id, [
         'method' => 'DELETE',
-        'headers' => ['Authorization' => 'Bearer ' . $GLOBALS['token'], 'Content-Type' => 'application/json'],
+        'headers'=>[
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer '.$token
+        ],
         'data_format' => 'body'
     ]);
     $res = wp_remote_retrieve_body($res);
@@ -454,11 +458,15 @@ function delete_project($id)
 
 function get_single_task($id)
 {
+    global $token;
     global $base_api;
 
     $res = wp_remote_get($base_api . 'api/v1/tasks/single/' . $id, [
         'method' => 'GET',
-        'headers' => ['Authorization' => 'Bearer ' . $GLOBALS['token']]
+        'headers'=>[
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer '.$token
+        ],
     ]);
     $res = wp_remote_retrieve_body($res);
     return json_decode($res);
@@ -467,10 +475,14 @@ function get_single_task($id)
 function complete_task($id)
 {
     global $base_api;
+    global $token;
 
     $res = wp_remote_get($base_api . 'api/v1/tasks/' . $id . "/complete", [
         'method' => 'POST',
-        'headers' => ['Authorization' => 'Bearer ' . $GLOBALS['token'], 'Content-Type' => 'application/json'],
+        'headers'=>[
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer '.$token
+        ],
         'data_format' => 'body'
     ]);
     $res = wp_remote_retrieve_body($res);
@@ -478,11 +490,15 @@ function complete_task($id)
 }
 function uncomplete_task($id)
 {
+    global $token;
     global $base_api;
 
     $res = wp_remote_get($base_api . 'api/v1/tasks/' . $id . "/uncomplete", [
         'method' => 'POST',
-        'headers' => ['Authorization' => 'Bearer ' . $GLOBALS['token'], 'Content-Type' => 'application/json'],
+        'headers'=>[
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer '.$token
+        ],
         'data_format' => 'body'
     ]);
     $res = wp_remote_retrieve_body($res);
@@ -490,11 +506,15 @@ function uncomplete_task($id)
 }
 function delete_task($id)
 {
+    global $token;
     global $base_api;
 
     $res = wp_remote_get($base_api . 'api/v1/tasks/' . $id, [
         'method' => 'DELETE',
-        'headers' => ['Authorization' => 'Bearer ' . $GLOBALS['token'], 'Content-Type' => 'application/json'],
+        'headers'=>[
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer '.$token
+        ],
         'data_format' => 'body'
     ]);
     $res = wp_remote_retrieve_body($res);
@@ -503,23 +523,31 @@ function delete_task($id)
 
 function mark_task_complete($id)
 {
+    global $token;
     global $base_api;
 
     $res = wp_remote_get($base_api . "api/v1/tasks/$id/complete", [
         'method' => 'POST',
-        'headers' => ['Authorization' => 'Bearer ' . $GLOBALS['token']]
+        'headers'=>[
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer '.$token
+        ],
     ]);
     $res = wp_remote_retrieve_body($res);
     return json_decode($res);
 }
 function mark_task_uncomplete($id)
 {
+    global $token;
     global $base_api;
 
     $res = wp_remote_get($base_api . "api/v1/tasks/$id/uncomplete", [
         'method' => 'POST',
-        'headers' => ['Authorization' => 'Bearer ' . $GLOBALS['token']]
-    ]);
+        'headers'=>[
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer '.$token
+        ],
+        ]);
     $res = wp_remote_retrieve_body($res);
     return json_decode($res);
 }
