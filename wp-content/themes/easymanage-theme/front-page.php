@@ -215,10 +215,10 @@ get_header();
         <?php
         $projects = get_trainers_projects(get_current_user_id());
         $t_active = array_filter($projects, function ($t_project) {
-            return $t_project->p_done == 0;
+            return $t_project->p_status == 0;
         });
         $t_completed = array_filter($projects, function ($t_project) {
-            return $t_project->p_done == 1;
+            return $t_project->p_status == 1;
         });
         // echo "aaaaaaaaaaaaaaaaaa"
         ?>
@@ -331,7 +331,7 @@ get_header();
         $s_projects = get_trainee_projects(get_current_user_id());
         $s_active = get_trainee_active_project(get_current_user_id());
         $s_completed = array_filter($s_projects, function ($s_project) {
-            return $s_project->p_done == 1;
+            return $s_project->p_status == 1;
         });
         ?>
         <div class="overview-flex" style="width: 118%; margin-left: -14%;">
