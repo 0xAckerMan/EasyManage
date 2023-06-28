@@ -17,6 +17,11 @@ a{
 	color: rgb(7, 109, 211);
 }
 
+.hydrated{
+	margin-top: 0 !important;
+/* 	background-color: red; */
+}
+
 .nav{
     display: flex;
     padding: 0 2%;
@@ -235,6 +240,8 @@ a{
 .page-update-task {
 	display: flex;
 	justify-content: center;
+	margin-top: -5%;
+	width: 100%;
 }
 
 .inner-form {
@@ -504,8 +511,9 @@ input:focus {
 	flex: 1;
 }
 .employees-con .e-role {
-	width: 140px;
-	text-align: center;
+	width: 200px;
+	text-align: left;
+	/* background-color: #0079bf; */
 }
 .employees-con .e-options {
 	width: 100px;
@@ -623,6 +631,35 @@ input:focus {
 	height: 100%;
 }
 
+.project-task {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 15px;
+}
+
+.project-task p {
+	flex: 1;
+}
+.project-task .project-tasks-options {
+	display: flex;
+	align-items: center;
+	gap: 15px;
+}
+
+.list-border {
+	border: 1px solid #f0f0f0;
+}
+.list-empty {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	opacity: 0.4;
+	background: #efefef36;
+	font-weight: 500;
+	padding: 10px;
+}
+
 @media screen and (max-width: 970px) {
 	.project-summary-list > div .ps-status {
 		display: none;
@@ -673,5 +710,20 @@ footer {
 	.page-employees,
 	.page-project {
 		padding: 10px 20px;
+	}
+}
+
+@media screen and (max-width: 700px) {
+	.page-project > .section-header {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 15px;
+	}
+	.project-tasks-options span {
+		font-size: 19px;
+	}
+	.project-tasks-options span input,
+	.project-tasks-options span span {
+		display: none;
 	}
 }
