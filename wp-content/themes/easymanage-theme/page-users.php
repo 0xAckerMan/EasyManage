@@ -70,48 +70,44 @@ if(is_user_in_role(wp_get_current_user(), 'administrator')){
     <?php endif; ?>
 </div>
 
-    <div class="e-list">
-        <div class="employee-h">
-            <div class="e-index">No.</div>
-            <div class="e-fullname">Fullname</div>
-            <div class="e-role">Role</div>
+<div class="e-list">
+    <div class="employee-h">
+        <div class="e-index">No.</div>
+        <div class="e-fullname">Fullname</div>
+        <div class="e-role">Role</div>
+        <?php if (current_user_can('administrator')) : ?>
             <div class="e-options">
                 Options
             </div>
-        </div>
-
-        <?php
-        $i = 0;
-        foreach ($users as $user) {
-        ?>
-
-
-            <div class="employee-d">
-                    <div class="e-index"><?php echo ++$i; ?>.</div>
-                    <div class="e-fullname"><?php echo $user->fullname ?></div>
-                    <div class="e-role"><?php echo $user->roles[0] ?></div>
-
-                    <div class="e-options">
-                        <?php
-                        if (current_user_can('administrator')) {
-                        ?>
-                            <a href="<?php echo site_url('/update-employee?id=' . $user->id) ?>"><ion-icon name='create' class="edit"></ion-icon></a>
-
-                            <form action="" method="post">
-                                <input type="hidden" name="delete-id" value="<?php echo $user->id ?>">
-                                <button type="submit" name="delete-employee">
-                                    <ion-icon name='trash' class="delete"></ion-icon>
-                                </button>
-                            </form>
-                        <?php
-                        }
-                        ?>
-                    </div>
-                </div>
-        <?php
-        }
-        ?>
+        <?php endif; ?>
     </div>
+
+    <?php
+    $i = 0;
+    foreach ($users as $user) {
+    ?>
+        <div class="employee-d">
+            <div class="e-index"><?php echo ++$i; ?>.</div>
+            <div class="e-fullname"><?php echo $user->fullname ?></div>
+            <div class="e-role"><?php echo $user->roles[0] ?></div>
+            <?php if (current_user_can('administrator')) : ?>
+                <div class="e-options">
+                    <a href="<?php echo site_url('/update-employee?id=' . $user->id) ?>"><ion-icon name='create' class="edit"></ion-icon></a>
+
+                    <form action="" method="post">
+                        <input type="hidden" name="delete-id" value="<?php echo $user->id ?>">
+                        <button type="submit" name="delete-employee">
+                            <ion-icon name='trash' class="delete"></ion-icon>
+                        </button>
+                    </form>
+                </div>
+            <?php endif; ?>
+        </div>
+    <?php
+    }
+    ?>
+</div>
+
 </div>
 
 <?php get_footer(); ?>
