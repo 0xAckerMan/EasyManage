@@ -42,9 +42,9 @@ class ProgramManager
         register_rest_route('api/v1', 'users/trainers', array(
             'methods' => 'POST',
             'callback' => array($this, 'create_trainer'),
-            // 'permission_callback' => function () {
-            //     return current_user_can('read');
-            // }
+            'permission_callback' => function () {
+                return current_user_can('read');
+            }
         ));
     }
     public function create_trainer($request)
