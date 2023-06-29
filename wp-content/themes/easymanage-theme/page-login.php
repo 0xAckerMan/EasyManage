@@ -58,6 +58,9 @@ if (isset($_POST['login-submit'])) {
 //     var_dump($data);
 // }
 // Display login form
+?>
+
+<?php
 date_default_timezone_set('Africa/Nairobi');
 $current_time = date('H');
 if ($current_time >= 5 && $current_time < 12) {
@@ -74,7 +77,8 @@ wp_head();
 get_header();
 ?>
 
-<form action="" method="post">
+
+<form action="" method="post" >
     <div class="page-login">
         <div class="inner-form">
             <h2><?php echo $greeting ?></h2>
@@ -89,6 +93,8 @@ get_header();
         </div>
     </div>
 </form>
+
+</div>
 
 <?php
 get_footer();

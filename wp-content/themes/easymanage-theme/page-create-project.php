@@ -15,7 +15,7 @@ global $form_error;
 global $token;
 
 $unassigned = get_all_unassigned();
-// var_dump($unassigned);
+var_dump($unassigned);
 
 if (isset($_POST['create-project'])) {
     require('wp-load.php');

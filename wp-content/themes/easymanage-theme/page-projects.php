@@ -21,8 +21,8 @@ if (is_user_in_role(wp_get_current_user(), 'administrator')) {
 } else if (is_user_in_role(wp_get_current_user(), 'ProjectManager')) {
     $projects = get_trainers_projects(get_current_user_id());
 } else if (is_user_in_role(wp_get_current_user(), 'trainer')) {
-    $projects = get_trainee_projects(get_current_user_id());
-}else{
+    $projects = get_trainers_projects(get_current_user_id());
+} else {
     $projects = get_trainee_projects(get_current_user_id());
 }
 
@@ -62,35 +62,39 @@ $completed = array_filter($projects, function ($project) {
         </div>
 
         <?php
-foreach ($projects as $project) {
-?>
-    <div class="project-summary-d">
-        <a href="<?php echo site_url('/detailed-project?id='.$project->p_id) ?>" class="ps-name"><?php echo $project->p_name ?></a>
-        <span class="ps-duedate"><?php echo style_date($project->p_due_date) ?></span>
-        <span class="ps-status"><span><?php echo $project->p_status == 0 ? "pending" : 'completed' ?></span></span>
-        <span class="ps-assignee">
-            <?php
-            if (isset($project->assigned_users)) {
-                foreach ($project->assigned_users as $assignedUser) {
-                    echo get_fullname_from_users($assignedUser, $trainees) . ', ';
-                }
-                echo rtrim(', ', ', '); // remove the trailing comma and space
-            }
-            ?>
-        </span>
-        <div class="ps-detail">
-            <span><?php echo $project->p_category ?></span>
-            <span><?php echo $project->p_excerpt ?></span>
-        </div>
-        <span class="ps-progress">
-            <div class="progress">
-                <div class="progress-bar" style="width: <?php echo $project->progress ?>"></div>
+        foreach ($ongoing as $project) {
+            $tasks = get_project_tasks($project->p_id);
+            $completed_tasks = project_completed_tasks($project->p_id);
+
+            // var_dump($completed_tasks);
+        ?>
+            <div class="project-summary-d">
+                <a href="<?php echo site_url('/detailed-project?id=' . $project->p_id) ?>" class="ps-name"><?php echo $project->p_name ?></a>
+                <span class="ps-duedate"><?php echo style_date($project->p_due_date) ?></span>
+                <span class="ps-status"><span><?php echo $project->p_status == 0 ? "pending" : 'completed' ?></span></span>
+                <span class="ps-assignee">
+                    <?php
+                    if (isset($project->assigned_users)) {
+                        foreach ($project->assigned_users as $assignedUser) {
+                            echo get_fullname_from_users($assignedUser, $trainees) . ', ';
+                        }
+                        echo rtrim(', ', ', '); // remove the trailing comma and space
+                    }
+                    ?>
+                </span>
+                <div class="ps-detail">
+                    <span><?php echo $project->p_category ?></span>
+                    <span><?php echo $project->p_excerpt ?></span>
+                </div>
+                <span class="ps-progress">
+                    <div class="progress">
+                        <div class="progress-bar" style="width: <?php echo calculate_completion_percentage_alt($completed_tasks, $tasks) ?>"></div>
+                    </div>
+                </span>
             </div>
-        </span>
-    </div>
-<?php
-}
-?>
+        <?php
+        }
+        ?>
     </div>
 </div>
 
@@ -109,29 +113,38 @@ foreach ($projects as $project) {
         </div>
 
         <?php
-        $projects = array_fill(0, 6, [
-            'title' => 'Plana - Event Management System',
-            'progress' => '75%',
-            'assigned_to' => 'John D',
-            'due_date' => 'Jul 23',
-            'status' => 'completed',
-            'category' => 'Web App',
-            'tags' => 'WordPress, plugins'
-        ]);
+        foreach ($completed as $project) {
+            $tasks = get_project_tasks($project->p_id);
+            $completed_tasks = project_completed_tasks($project->p_id);
 
-        foreach ($projects as $project) {
         ?>
             <div class="project-summary-d">
-                <a href="<?php echo site_url('/detailed-project?id=1') ?>" class="ps-name"><?php echo $project['title'] ?></a>
-                <span class="ps-duedate"><?php echo $project['due_date'] ?></span>
-                <span class="ps-status"><span><?php echo $project['status'] ?></span></span>
-                <span class="ps-assignee"><?php echo $project['assigned_to'] ?></span>
+                <a href="<?php echo site_url('/detailed-project?id=' . $project->p_id) ?>" class="ps-name"><?php echo $project->p_name ?></a>
+                <span class="ps-duedate"><?php echo style_date($project->p_due_date) ?></span>
+                <span class="ps-status"><span><?php echo $project->p_status == 0 ? "pending" : 'completed' ?></span></span>
+                <span class="ps-assignee">
+                    <?php
+                    if (isset($project->assigned_users)) {
+                        foreach ($project->assigned_users as $assignedUser) {
+                            echo get_fullname_from_users($assignedUser, $trainees) . ', ';
+                        }
+                        echo rtrim(', ', ', '); // remove the trailing comma and space
+                    }
+                    ?>
+                </span>
                 <div class="ps-detail">
-                    <span><?php echo $project['category'] ?></span>
-                    <span><?php echo $project['tags'] ?></span>
+                    <span><?php echo $project->p_category ?></span>
+                    <span><?php echo $project->p_excerpt ?></span>
                 </div>
+                <span class="ps-progress">
+                    <div class="progress">
+                        <div class="progress-bar" style="width: <?php echo calculate_completion_percentage_alt($completed_tasks, $tasks) ?>"></div>
+                    </div>
+                </span>
             </div>
-        <?php } ?>
+        <?php
+        }
+        ?>
     </div>
 </div>
 
