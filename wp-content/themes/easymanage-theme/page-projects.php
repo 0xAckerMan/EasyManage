@@ -18,8 +18,8 @@ $trainees = array_filter($users, function ($trainee) {
 // $projects = [];
 if (is_user_in_role(wp_get_current_user(), 'administrator')) {
     $projects = get_all_projects();
-} else if (is_user_in_role(wp_get_current_user(), 'ProjectManager')) {
-    $projects = get_trainers_projects(get_current_user_id());
+} else if (is_user_in_role(wp_get_current_user(), 'program-manager')) {
+    $projects = get_all_projects();
 } else if (is_user_in_role(wp_get_current_user(), 'trainer')) {
     $projects = get_trainers_projects(get_current_user_id());
 } else {

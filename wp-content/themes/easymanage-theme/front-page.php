@@ -26,6 +26,7 @@ if (is_user_in_role(wp_get_current_user(), 'administrator')) {
     $completed = array_filter($projects, function ($project) {
         return $project->p_status == 1;
     });
+    
     // var_dump($projects);
 }
 if (is_user_in_role(wp_get_current_user(), 'program-manager')) {
@@ -128,12 +129,12 @@ get_header();
                 <div class="overview-labels">
 
                     <div>
-                        <div class="ol-title">Wordpress</div>
-                        <div class="ol-val">10</div>
+                        <!-- <div class="ol-title">Wordpress</div>
+                        <div class="ol-val">10</div> -->
                     </div>
                     <div>
-                        <div class="ol-title">Angular</div>
-                        <div class="ol-val">14</div>
+                        <!-- <div class="ol-title">Angular</div>
+                        <div class="ol-val">14</div> -->
                     </div>
                 </div>
             </div>
@@ -253,12 +254,12 @@ get_header();
             </div>
             <div class="overview-labels">
                 <div>
-                    <div class="ol-title">Wordpress</div>
-                    <div class="ol-val">10</div>
+                    <!-- <div class="ol-title">Wordpress</div>
+                    <div class="ol-val">10</div> -->
                 </div>
                 <div>
-                    <div class="ol-title">Angular</div>
-                    <div class="ol-val">14</div>
+                    <!-- <div class="ol-title">Angular</div>
+                    <div class="ol-val">14</div> -->
                 </div>
             </div>
         </div>

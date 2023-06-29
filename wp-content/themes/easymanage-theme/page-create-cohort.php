@@ -6,13 +6,14 @@
 require('wp-load.php');
 /**
  * 
- * Template Name: Create Employee Template
+ * Template Name: Create cohort Template
  */
 get_header();
 ?>
 
 <?php
 
+$token = ($_COOKIE['token']);
 
 global $form_error;
 global $form_success;
@@ -30,7 +31,10 @@ if (isset($_POST['create-cohort-submit'])) {
 
     $res = wp_remote_post('http://localhost/EasyManage/wp-json/api/v1/cohorts', [
         'methods' => 'POST',
-        'headers' => ['Content-Type' => 'application/json'],
+        'headers' => ['Content-Type' => 'application/json',
+        'Authorization' => 'Bearer '.$token
+
+    ],
         'body' => json_encode($data),
         'data_format' => 'body'
     ]);

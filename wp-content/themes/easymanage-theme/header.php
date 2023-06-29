@@ -87,7 +87,7 @@ if (!is_user_logged_in() && $slug != 'login') {
                         
                         <?php if (current_user_can('program-manager')) : ?>
                         <li class="expandable<?php echo in_array($slug, $cohorts_routes) ? ' active' : ''; ?>">
-                            <a href="<?php echo site_url('/cohorts'); ?>">
+                            <a href="<?php echo site_url('/create-cohort'); ?>">
                                 <ion-icon name="folder-outline"></ion-icon>
                                 Programs
                             </a>

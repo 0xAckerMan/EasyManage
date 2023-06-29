@@ -14,8 +14,11 @@ global $form_error;
 
 global $token;
 
+$cohorts = get_all_cohorts();
+$cname = $cohorts[0]->c_name;
+
 $unassigned = get_all_unassigned();
-var_dump($unassigned);
+// var_dump($unassigned);
 
 if (isset($_POST['create-project'])) {
     require('wp-load.php');
@@ -26,19 +29,24 @@ if (isset($_POST['create-project'])) {
         'p_description' => $_POST['p_description'],
         'p_due_date' => $_POST['p_due_date'],
         'p_assigned_cohort' => $_POST['p_assigned_cohort'],
-        'assigned_users' => $_POST['assigned_users']
-        // 'p_done' => $_POST['p_done'],
+        'p_assigned_to' => $_POST['assignees']
     ];
+    ?>
+    <pre>
+        <?php
+        // var_dump($data);
+        ?>
+    </pre>
+    <?php
 
-    var_dump($data);
-
-    // $res = wp_remote_post('http://localhost/EasyManage/wp-json/api/v1/projects/', [
-    //     'method' => 'POST',
-    //     'headers' => ['Authorization' => 'Bearer '.$token, 'Content-Type' => 'application/json'],
-    //     'body' => json_encode($data),
-    //     'data_format' => 'body'
-    // ]);
-    // $res = wp_remote_retrieve_body($res);
+    $res = wp_remote_post('http://localhost/EasyManage/wp-json/api/v1/projects/', [
+        'methods' => 'POST',
+        'headers' => ['Authorization' => 'Bearer '.$token, 'Content-Type' => 'application/json'],
+        'body' => json_encode($data),
+        'data_format' => 'body'
+    ]);
+    $res = json_decode(wp_remote_retrieve_body($res));
+    $res = json_decode($res);
 
 
     if (!is_wp_error($res)) {
@@ -72,8 +80,9 @@ if (isset($_POST['create-project'])) {
                 <label for="p_assigned_cohort">Assign Cohort</label>
                 <select name="p_assigned_cohort" id="p_assigned_cohort">
                     <option value="" selected disabled hidden>Assign to cohort</option>
-                    <?php foreach ($users as $user) : ?>
-                        <option value="<?php echo $user['id'] ?>"><?php echo $user['email'] ?></option>
+                    <?php foreach ($cohorts as $user) : ?>
+
+                        <option value="<?php echo $user->c_id ?>"><?php echo $user->c_name ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -90,7 +99,7 @@ if (isset($_POST['create-project'])) {
 
             <div class="input-con">
                 <label>Assigned Trainees (Max 3)</label>
-                <select id="assigned_users" name="assigned_users" multiple size="3" readonly></select>
+                <select id="assigned_users" name="assignees[]" multiple size="3" readonly></select>
             </div>
 
             <button class="custom-btn" type="submit" name="create-project">Create</button>
@@ -108,8 +117,8 @@ if (isset($_POST['create-project'])) {
 
         // Add selected users to the assignedUsers array
         selectedOptions.forEach(function(option) {
-            if (!assignedUsers.includes(option.text) && assignedUsers.length < 3) {
-                assignedUsers.push(option.text);
+            if (!assignedUsers.includes(option.textContent) && assignedUsers.length < 3) {
+                assignedUsers.push(option.textContent);
             }
         });
 
@@ -124,8 +133,5 @@ if (isset($_POST['create-project'])) {
         });
     });
 </script>
-
-
-
 
 <?php get_footer() ?>

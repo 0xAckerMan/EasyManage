@@ -634,10 +634,36 @@ function mark_task_uncomplete($id)
 
 
 
+function deactivate_user($id){
+    global $token;
+    global $base_api;
+
+    $res = wp_remote_get($base_api . "api/v1/users/$id/deactivate", [
+        'method' => 'POST',
+        'headers'=>[
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer '.$token
+        ],
+        ]);
+    $res = wp_remote_retrieve_body($res);
+    return json_decode($res);
+}
 
 
+function activate_user($id){
+    global $token;
+    global $base_api;
 
-
+    $res = wp_remote_get($base_api . "api/v1/users/$id/activate", [
+        'method' => 'POST',
+        'headers'=>[
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer '.$token
+        ],
+        ]);
+    $res = wp_remote_retrieve_body($res);
+    return json_decode($res);
+}
 
 
 
@@ -703,6 +729,53 @@ function get_all_unassigned()
     global $token;
 
     $res = wp_remote_get($base_api . 'api/v1/projects/unassigned', [
+        'method' => 'GET',
+        'headers'=>[
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer '.$token
+        ]
+    ]);
+
+    if (is_wp_error($res)) {
+        // Handle the error here
+        return false;
+    }
+
+    $res_body = wp_remote_retrieve_body($res);
+    
+    return json_decode($res_body);
+}
+
+function get_all_inactive()
+{
+    global $base_api;
+    global $token;
+
+    $res = wp_remote_get($base_api . 'api/v1/users/deactivated', [
+        'method' => 'GET',
+        'headers'=>[
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer '.$token
+        ]
+    ]);
+
+    if (is_wp_error($res)) {
+        // Handle the error here
+        return false;
+    }
+
+    $res_body = wp_remote_retrieve_body($res);
+    
+    return json_decode($res_body);
+}
+
+
+function get_all_cohorts()
+{
+    global $base_api;
+    global $token;
+
+    $res = wp_remote_get($base_api . 'api/v1/cohorts', [
         'method' => 'GET',
         'headers'=>[
             'Content-Type' => 'application/json',
