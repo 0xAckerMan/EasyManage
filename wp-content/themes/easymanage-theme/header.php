@@ -7,25 +7,7 @@ if (!is_user_logged_in() && $slug != 'login') {
 }
 ?>
 
-<?php
-// if (is_user_logged_in()) {
-//     if (isset($GLOBALS['token'])) {
-//         // Token already exists, no need to fetch it again
-//         // echo $GLOBALS['token'];
-//     } else {
-//         $user = wp_get_current_user();
-//         $response = get_token('admin', 'admin123');
 
-//         if ($response !== false) {
-//             $token_data = json_decode($response, true);
-//             $GLOBALS['token'] = $token_data['token'];
-//         } else {
-//             // Handle the case when token retrieval fails
-//             // Display an error message or perform any necessary actions
-//         }
-//     }
-// }
-?>
 
 
 <!DOCTYPE html>
@@ -57,7 +39,8 @@ if (!is_user_logged_in() && $slug != 'login') {
     $slug = basename(get_permalink());
 
     $home_routes = ['EasyManage', 'home', 'login', 'register'];
-    $employee_routes = ['employees', 'update-employee', 'create-employee'];
+    $employee_routes = ['employees', 'update-employee', 'create-employee', 'create-cohort', 'update-cohort', 'create-trainee', 'create-trainer', 'create-program-manager', 'inactive-users'];
+    $cohorts_routes = ['cohorts', 'cohort', 'update-cohort', 'create-cohort'];
     $project_routes = ['projects', 'project', 'update-project', 'create-project', 'update-task', 'create-task'];
     ?>
 
@@ -70,7 +53,7 @@ if (!is_user_logged_in() && $slug != 'login') {
                 <ion-icon name="person-outline"></ion-icon>
                 <?php
                 $name = custom_get_user_meta(get_current_user_id());
-                echo $name != '' ? $name : get_userdata(get_current_user_id())->user_login;
+                echo $name != '' ? $name : get_userdata(get_current_user_id())->user_nicename;
                 ?>
             </div>
         </div>
@@ -82,88 +65,120 @@ if (!is_user_logged_in() && $slug != 'login') {
                             <ion-icon name="home-outline"></ion-icon>
                             Home
                         </a>
-                    </li>
+                        </li>
 
-                    <li class="expandable<?php echo in_array($slug, $project_routes) ? ' active' : ''; ?>">
-                        <a href="<?php echo site_url('/projects'); ?>">
-                            <ion-icon name="folder-outline"></ion-icon>
-                            Projects
-                        </a>
-                        <ul class="sub-menu">
-                            <?php if (current_user_can('trainer')) : ?>
-                                <li>
-                                    <a href="<?php echo site_url('/create-project'); ?>">
-                                        <ion-icon name="add-outline"></ion-icon>
-                                        Create Project
-                                    </a>
-                                </li>
-                            <?php endif; ?>
-                        </ul>
-                    </li>
+                        <li class="expandable<?php echo in_array($slug, $project_routes) ? ' active' : ''; ?>">
+                            <a href="<?php echo site_url('/projects'); ?>">
+                                <ion-icon name="folder-outline"></ion-icon>
+                                Projects
+                            </a>
+                            <ul class="sub-menu">
+                                <?php if (current_user_can('trainer')) : ?>
+                                    <li>
+                                        <a href="<?php echo site_url('/create-project'); ?>">
+                                            <ion-icon name="add-outline"></ion-icon>
+                                            Create Project
+                                        </a>
+                                    </li>
+                                <?php endif; ?>
+                            </ul>
+                        </li>
 
-                    <li class="expandable<?php echo in_array($slug, $employee_routes) ? ' active' : ''; ?>">
-                        <a href="<?php echo site_url('/users'); ?>">
-                            <ion-icon name="people-outline"></ion-icon>
-                            Members
-                        </a>
-                        <ul class="sub-menu">
-                            <li>
-                                <a href="<?php echo site_url('/users'); ?>">
-                                    <ion-icon name="person-circle-outline"></ion-icon>
-                                    Active Users
-                                </a>
+                        
+                        <?php if (current_user_can('program-manager')) : ?>
+                        <li class="expandable<?php echo in_array($slug, $cohorts_routes) ? ' active' : ''; ?>">
+                            <a href="<?php echo site_url('/create-cohort'); ?>">
+                                <ion-icon name="folder-outline"></ion-icon>
+                                Programs
+                            </a>
+                            <ul class="sub-menu">
+                                    <li>
+                                        <a href="<?php echo site_url('/create-cohort'); ?>">
+                                            <ion-icon name="add-outline"></ion-icon>
+                                            Create cohort
+                                        </a>
+                                    </li>
+                                </ul>
                             </li>
-                            <?php if (current_user_can('trainer') || current_user_can('program_manager') || current_user_can('administrator')) : ?>
+                            <?php endif; ?>
+
+
+                        <li class="expandable<?php echo in_array($slug, $employee_routes) ? ' active' : ''; ?>">
+                            <a href="<?php echo site_url('/users'); ?>">
+                                <ion-icon name="people-outline"></ion-icon>
+                                Members
+                            </a>
+                            <ul class="sub-menu">
                                 <li>
                                     <a href="<?php echo site_url('/users'); ?>">
                                         <ion-icon name="person-circle-outline"></ion-icon>
-                                        Inactive Users
+                                        Active Users
                                     </a>
                                 </li>
-                            <?php endif; ?>
-                        </ul>
-                    </li>
+                                <?php if (current_user_can('trainer') || current_user_can('program_manager') || current_user_can('administrator')) : ?>
+                                    <li>
+                                        <a href="<?php echo site_url('/inactive-users'); ?>">
+                                            <ion-icon name="person-circle-outline"></ion-icon>
+                                            Inactive Users
+                                        </a>
+                                    </li>
+                                <?php endif; ?>
+                            </ul>
+                        </li>
+
 
                 </ul>
 
-                <a href="<?php echo wp_logout_url(); ?>" class="logout-btn" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-    <ion-icon name="log-out-outline"></ion-icon>
-    Logout
-</a>
 
-<form id="logout-form" action="<?php echo wp_logout_url(home_url()); ?>" method="POST" style="display: none;">
-    <?php wp_nonce_field('logout', 'logout-nonce'); ?>
-</form>
+                <?php if (current_user_can('program_manager')) : ?>
+    <li>
+        <a href="<?php echo site_url('/create-cohort.php'); ?>">
+            <ion-icon name="add-outline"></ion-icon>
+            Create Cohort
+        </a>
+    </li>
+<?php endif; ?>
+
+
+                </ul>
+                <a href="<?php echo wp_logout_url(); ?>" class="logout-btn" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                    <ion-icon name="log-out-outline"></ion-icon>
+                    Logout
+                </a>
+
+                <form id="logout-form" action="<?php echo wp_logout_url(home_url()); ?>" method="POST" style="display: none;">
+                    <?php wp_nonce_field('logout', 'logout-nonce'); ?>
+                </form>
 
 
 
             </div>
-
             <div class="right-container">
-                <?php else : ?>
-                    <div class="nav">
-                        <div class="left-nav">
-                            <h1><a href="<?php echo site_url(); ?>">Easy<span>Manage</span></a></h1>
-                        </div>
+            <?php else : ?>
+                <div class="nav" style="margin-top: 1.5%;">
+                    <div class="left-nav">
+                        <h1><a href="<?php echo site_url(); ?>">Easy<span>Manage</span></a></h1>
                     </div>
-                <?php endif; ?>
+                </div>
+                <div class="red" style="height: 83vh; margin-top: 3%;">
+            <?php endif; ?>
 
-                <script>
-                    const expandableItems = document.querySelectorAll('.expandable');
-                    const activeItem = document.querySelector('.active');
+            <script>
+                const expandableItems = document.querySelectorAll('.expandable');
+                const activeItem = document.querySelector('.active');
 
-                    expandableItems.forEach(item => {
-                        const submenu = item.querySelector('.sub-menu');
-                        const arrow = item.querySelector('a::after');
+                expandableItems.forEach(item => {
+                    const submenu = item.querySelector('.sub-menu');
+                    const arrow = item.querySelector('a::after');
 
-                        item.addEventListener('click', () => {
-                            item.classList.toggle('active');
-                            submenu.style.maxHeight = item.classList.contains('active') ? submenu.scrollHeight + 'px' : '0';
-                        });
+                    item.addEventListener('click', () => {
+                        item.classList.toggle('active');
+                        submenu.style.maxHeight = item.classList.contains('active') ? submenu.scrollHeight + 'px' : '0';
                     });
+                });
 
-                    if (activeItem) {
-                        const submenu = activeItem.querySelector('.sub-menu');
-                        submenu.style.maxHeight = submenu.scrollHeight + 'px';
-                    }
-                </script>
+                if (activeItem) {
+                    const submenu = activeItem.querySelector('.sub-menu');
+                    submenu.style.maxHeight = submenu.scrollHeight + 'px';
+                }
+            </script>

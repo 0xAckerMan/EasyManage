@@ -12,7 +12,12 @@ get_header();
 ?>
 
 <?php
+$cohorts = get_all_cohorts();
+$cname = $cohorts[0]->c_name;
 
+// var_dump($all_name);
+// var_dump($cname);
+// echo $all_name;
 
 global $form_error;
 global $form_success;
@@ -24,11 +29,12 @@ if (isset($_POST['create-trainee-submit'])) {
         'email' => $_POST['email'],
         // 'role' => 'program-manager',
         'password' => $_POST['password'],
+        'cohort' => $_POST['cohort'],
     ];
 
     // var_dump($data);
 
-    $res = wp_remote_post('http://localhost/EasyManage/wp-json/api/v1/users/trainers', [
+    $res = wp_remote_post('http://localhost/EasyManage/wp-json/api/v1/users/trainees', [
         'methods' => 'POST',
         'headers' => ['Content-Type' => 'application/json'],
         'body' => json_encode($data),
@@ -59,17 +65,13 @@ if (isset($_POST['create-trainee-submit'])) {
             <?php echo do_shortcode("[input_tag name='fullname' label='Fullname' placeholder='Enter their fullname']") ?>
             <?php echo do_shortcode("[input_tag name='email' label='Email Address' input_type='email' placeholder='Enter their email address']") ?>
             <?php echo do_shortcode("[input_tag name='password' label='Password' input_type='password' placeholder='Enter their password']") ?>
+            <?php echo $cname; ?>
+            <?php echo do_shortcode("[input_tag name='cohort' label='Cohort' placeholder='Assign to cohort']") ?>
 
-            <!-- <div class="input-con-radio">
-                <label for="">Role</label>
 
-                <div class="radios">
-                    <input type="radio" name="role" id="project-manager" value="ProjectManager" required>
-                    <label for="program-manager">
-                        Program Manager
-                    </label>
-                </div>
-            </div> -->
+
+
+
 
             <button class="custom-btn" type="submit" name="create-trainee-submit">Create</button>
         </div>

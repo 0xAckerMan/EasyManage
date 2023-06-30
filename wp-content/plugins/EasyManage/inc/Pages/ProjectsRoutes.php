@@ -200,22 +200,6 @@ class ProjectsRoutes{
         $projects_table_name = $wpdb->prefix . 'projects';
         $group_projects_table_name = $wpdb->prefix . 'group_projects';
     
-        // Get the current user ID
-        $current_user_id = get_current_user_id();
-    
-        // Check the number of projects allocated to the current user
-        $projects_count = $wpdb->get_var(
-            $wpdb->prepare(
-                "SELECT COUNT(*) FROM $projects_table_name WHERE p_assigned_by = %d",
-                $current_user_id
-            )
-        );
-    
-        // Check if the user has already reached the maximum allocation of 3 projects
-        if ($projects_count > 4) {
-            return new WP_Error('max_project_allocation_reached', 'Maximum project allocation reached', ['status' => 400]);
-        }
-    
         // Validate and sanitize the input data
         $p_name = sanitize_text_field($request['p_name']);
         $p_description = sanitize_textarea_field($request['p_description']);
@@ -226,13 +210,31 @@ class ProjectsRoutes{
         $assigned_users = (array) $request['p_assigned_to'];
         $assigned_users = array_slice($assigned_users, 0, 3); // Limit the number of assigned users to 3
     
+        // Check if any of the assigned users already have 3 active projects
+        foreach ($assigned_users as $assigned_user_id) {
+            $assigned_user_projects_count = $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT COUNT(*) FROM $group_projects_table_name AS gp
+                    INNER JOIN $projects_table_name AS p ON gp.project_id = p.p_id
+                    WHERE gp.user_id = %d AND p.p_status = 0",
+                    $assigned_user_id
+                )
+            );
+    
+            // If the assigned user already has 3 active projects, return an error
+            if ($assigned_user_projects_count >= 3) {
+                return new WP_Error('max_project_allocation_reached', 'One or more assigned users have reached the maximum project allocation', ['status' => 400]);
+            }
+        }
+    
         // Insert the project into the projects table
         $project_data = array(
             'p_name' => $p_name,
             'p_description' => $p_description,
             'p_category' => $p_category,
             'p_excerpt' => $p_excerpt,
-            'p_assigned_by' => $current_user_id,
+            // 'p_status' => 1, // Set the project status as active
+            'p_assigned_by' => get_current_user_id(),
             'p_created_date' => current_time('mysql'),
             'p_due_date' => $p_due_date,
             'p_cohort_id' => $p_cohort_id,
@@ -256,6 +258,10 @@ class ProjectsRoutes{
             return new WP_Error('project_creation_failed', 'Project creation failed', ['status' => 500]);
         }
     }
+    
+
+    
+    
     
 
     
@@ -557,37 +563,33 @@ class ProjectsRoutes{
     public function get_unassigned_users($request) {
         global $wpdb;
         $users_table = $wpdb->prefix . 'users';
-        $usermeta_table = $wpdb->prefix . 'usermeta';
         $group_projects_table = $wpdb->prefix . 'group_projects';
         $current_user_id = get_current_user_id(); // Get the ID of the current user
     
         $query = "SELECT u.ID, u.user_nicename, u.user_email
                   FROM $users_table AS u
-                  INNER JOIN $usermeta_table AS um ON u.ID = um.user_id
+                  INNER JOIN $wpdb->usermeta AS um ON u.ID = um.user_id
                   WHERE um.meta_key = 'wp_capabilities' AND um.meta_value LIKE '%trainee%'
-                    AND u.ID NOT IN (
-                      SELECT user_id
-                      FROM $group_projects_table
-                      GROUP BY user_id
-                      HAVING COUNT(*) >= 3
-                  )
-                  AND (u.ID IN (
+                  AND u.ID NOT IN (
                       SELECT user_id
                       FROM $group_projects_table
                       WHERE project_id IN (
                           SELECT project_id
                           FROM $group_projects_table
-                          WHERE user_id = $current_user_id
+                          WHERE user_id = u.ID
                       )
-                  ) OR u.ID IN (
+                      GROUP BY user_id
+                      HAVING COUNT(*) >= 3
+                  )
+                  AND u.ID NOT IN (
                       SELECT user_id
                       FROM $group_projects_table
                       WHERE project_id IN (
                           SELECT p_id
                           FROM {$wpdb->prefix}projects
-                          WHERE p_assigned_by = $current_user_id
+                          WHERE p_status = 0
                       )
-                  ))";
+                  )";
     
         $users = $wpdb->get_results($query);
     
@@ -608,6 +610,7 @@ class ProjectsRoutes{
     
         return $modified_users;
     }
+    
     
     
       
